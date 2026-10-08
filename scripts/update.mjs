@@ -122,7 +122,7 @@ async function fetchNews() {
    and ask a small AI model for a short
    summary in our own words (free Gemini API). Only the summary and the link are stored, never the article text. */
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-const SUM_PER_RUN = 10;
+const SUM_PER_RUN = 12;
 
 export async function decodeGoogleNews(url) {
   const m = url.match(/news\.google\.com\/(?:rss\/)?articles\/([^?]+)/);
@@ -149,7 +149,7 @@ export function articleText(html) {
 const SYSTEM = `You write posts for Unmai, a Tamil cinema news app read by fans on their phones.
 From the article text, return JSON with three fields:
 "hook": a short, punchy headline in your own words (max 12 words) that makes a fan want to read on. It must be accurate: no exaggeration, no question bait, no claims that aren't in the text, no ALL CAPS, no emoji.
-"summary": 2 to 3 plain sentences (max 60 words) in your own words with the key facts: who, what, when, numbers. Never copy sentences from the article. If something is unconfirmed (sources, reportedly, buzz), say it is reported, not confirmed.
+"summary": the whole story told on its own so the reader never needs the original article: 3 to 5 short sentences, 60 to 90 words. Lead with the single most interesting fact. Then the juice: names, numbers, dates, what was actually said. If someone is quoted, include their most telling line as a short direct quote (under 20 words) with who said it. Skip filler, background everyone knows, and promotional fluff. Write like a sharp entertainment reporter, in plain English and in your own words; apart from that one quote, never copy sentences from the article. If something is unconfirmed (sources, reportedly, buzz), say it is reported, not confirmed.
 "score": a whole number 1 to 10 for how interesting this is to Tamil cinema fans. 8 to 10: big-star films, release dates, trailers, box office milestones, casting news, confirmed or busted rumours. 4 to 7: smaller films, interviews with news in them, OTT dates. 1 to 3: song uploads, listicles, gossip about private lives, anything not about Tamil cinema.
 Use only facts in the article text. If the text is empty or unrelated to the headline, return {"hook":"","summary":"","score":0}.`;
 
@@ -208,8 +208,8 @@ async function summarise(title, source, text) {
 async function addSummaries(items, tried) {
   let done = 0;
   for (const it of items) {
-    if (done >= SUM_PER_RUN || modelBlocked || DIAG.attempts >= 14) break;
-    if (it.hook || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
+    if (done >= SUM_PER_RUN || modelBlocked || DIAG.attempts >= 16) break;
+    if (it.v === 2 || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
     DIAG.attempts++;
     try {
       const real = it.realUrl || (await decodeGoogleNews(it.url));
@@ -221,7 +221,7 @@ async function addSummaries(items, tried) {
       if (text.length < 200) { DIAG.short++; tried[it.id] = NOW; continue; }
       const res2 = await summarise(it.title, it.source, text);
       if (res2 === "SKIP") { DIAG.skip++; it.score = 0; tried[it.id] = NOW; }
-      else if (res2) { Object.assign(it, res2); done++; DIAG.ok++; }
+      else if (res2) { Object.assign(it, res2, { v: 2 }); done++; DIAG.ok++; }
       // sum === null means the AI call failed: don't mark as tried, retry next run
     } catch (e) { DIAG.fetchErr++; tried[it.id] = NOW; console.warn("summary failed:", it.title.slice(0, 50), e.message); }
   }
@@ -255,6 +255,19 @@ async function fetchPosters(prev) {
       };
     } catch (e) { console.warn("tmdb failed:", f.id, e.message); }
   }
+  // A gallery of stills per film, so posts about the same film don't all show the same picture.
+  let gcalls = 0;
+  for (const [id, P] of Object.entries(posters)) {
+    if (!P.tmdb || P.gallery || gcalls >= 12) continue;
+    gcalls++;
+    try {
+      const j = await tmdb(`/movie/${P.tmdb}/images?include_image_language=null,en,ta`);
+      const pick = (list, size, n) => (list || []).filter(x => x.file_path).sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0)).slice(0, n).map(x => `https://image.tmdb.org/t/p/${size}${x.file_path}`);
+      const g = [...new Set([P.backdrop, ...pick(j.backdrops, "w780", 12)].filter(Boolean))];
+      P.gallery = g;
+      P.posters = pick(j.posters, "w342", 6);
+    } catch (e) { console.warn("tmdb images failed:", id, e.message); }
+  }
   prev.postersTried = tried;
   return posters;
 }
@@ -285,14 +298,14 @@ async function main() {
       id: it.id, title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
       tag: it.tag || tagOf(it.title), film: it.film || matchFilm(it.title),
       ...(it.realUrl ? { realUrl: it.realUrl } : {}), ...(it.sum ? { sum: it.sum } : {}),
-      ...(it.hook ? { hook: it.hook } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
+      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
       ...(it.also && it.also.length ? { also: it.also.slice(0, 8) } : {}),
     });
     if (kept.length >= MAX_ITEMS) break;
   }
 
   const posters = await fetchPosters(prev);
-  const sumTried = prev.sumTried2 || {};
+  const sumTried = prev.sumTried3 || {};
   await addSummaries(kept, sumTried);
   for (const k of Object.keys(sumTried)) if (NOW - sumTried[k] > 3 * 864e5) delete sumTried[k];
   const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || "", i.hook || "", (i.also || []).length]));
@@ -301,7 +314,7 @@ async function main() {
   const sameDiag = JSON.stringify(prev.diag || {}) === JSON.stringify(DIAG);
   if (sameItems && samePosters && sameDiag) { console.log("No changes."); return; }
 
-  const out = { updated: NOW, items: kept, posters, postersTried: prev.postersTried || {}, sumTried2: sumTried, diag: DIAG };
+  const out = { updated: NOW, items: kept, posters, postersTried: prev.postersTried || {}, sumTried3: sumTried, diag: DIAG };
   writeFileSync(OUT, JSON.stringify(out));
   console.log(`Wrote ${kept.length} items (${fresh.length} fetched this run), ${Object.keys(posters).length} films with images.`);
 }

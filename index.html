@@ -333,6 +333,21 @@ button:active{opacity:.75}
 .seg button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .setrow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-weight:600;text-decoration:none}
 .setrow small{color:var(--muted);font-weight:500}
+/* tweet layout: avatar column on the left, everything else beside it */
+.post{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:11px;row-gap:6px;padding:12px 16px 4px}
+.post>*{grid-column:2;min-width:0}
+.post>.ph{display:contents}
+.post .ph>.av{grid-column:1;grid-row:1/span 8;align-self:start}
+.post .ph>.nm{grid-column:2;grid-row:1;display:flex;align-items:baseline;gap:5px;min-width:0;padding-right:70px}
+.post .ph>.nm small{flex:1}
+.post .ph>.tag{grid-column:2;grid-row:1;justify-self:end;align-self:start}
+.post .pin{grid-column:2;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:-2px}
+.post.pinned .pin{grid-row:1}.post.pinned .ph>.av,.post.pinned .ph>.nm,.post.pinned .ph>.tag{grid-row:2}.post.pinned .ph>.av{grid-row:2/span 8}
+.post .ptxt{font-size:15.5px;color:var(--ink);width:100%;display:block}
+.post .hook{font-size:16px;margin-bottom:2px;text-wrap:wrap}
+.post .media{aspect-ratio:16/9;border-radius:16px;margin-top:4px}
+.post .acts{margin:0 -8px}
+.credit{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin:0}.credit img{width:16px;height:16px;border-radius:4px}.credit a{color:inherit;font-weight:700}
 </style>
 </head>
 <body>
@@ -479,7 +494,10 @@ const candy=s=>CANDY[[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0)%CANDY.len
 let LIVE_DATA={items:[],posters:{}},POSTERS={};
 const gradient=p=>{const [a,b]=PAL[p]||PAL.ash;return `<div class="art" style="background:radial-gradient(90% 80% at 75% 20%,${b}dd 0%,transparent 70%),radial-gradient(60% 60% at 15% 90%,${b}66 0%,transparent 70%),linear-gradient(170deg,${a},#000)"></div><div class="grain"></div>`};
 // Real poster or backdrop from TMDB when we have one, otherwise the drawn placeholder.
-function img(fid,kind){const f=F[fid]||{},P=POSTERS[fid]||{};const u=kind==="backdrop"?(P.backdrop||P.poster):(P.poster||P.backdrop);
+const hsh=s=>[...String(s)].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
+const galleryOf=fid=>{const P=POSTERS[fid]||{};return (P.gallery&&P.gallery.length?P.gallery:[P.backdrop||P.poster]).filter(Boolean)};
+const pickShot=(fid,seed)=>{const g=galleryOf(fid);if(!g.length)return"";const s=String(seed);return /^\d+#$/.test(s)?g[parseInt(s)%g.length]:g[hsh(s)%g.length]};
+function img(fid,kind,seed){const f=F[fid]||{},P=POSTERS[fid]||{};const u=kind==="shot"?pickShot(fid,seed):kind==="backdrop"?(P.backdrop||P.poster):(P.poster||P.backdrop);
   return u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">${""}`:gradient(f.p||"ash")}
 const hasImg=fid=>!!(POSTERS[fid]&&(POSTERS[fid].backdrop||POSTERS[fid].poster));
 
@@ -558,9 +576,13 @@ function shareText(it){
   if(p.k==="rumour"){const r=RUMS[p.r];return (r.st==="busted"?"BUSTED: ":r.st==="happened"?"CAME TRUE: ":"RUMOUR: ")+r.t+". Via Unmai."}
   return p.h+". Via Unmai.";}
 function critMini(f){const c=crit(f),v=tier(c.score);return `<div class="sc2"><div><b style="color:${colv(c.score)}">${c.pos}/${c.n}</b><small>critics liked it</small></div><div><b class="lock">soon</b><small>verified audience</small></div><span class="sticker v-${v[0]}">${v[1]}</span></div>`}
-function media(fid,attr,extra=""){return `<button class="media pic" ${attr} aria-label="Open">${img(fid,"backdrop")}<span class="ov">${esc(F[fid].t)}</span>${extra}</button>`}
+function media(fid,attr,extra="",seed){return `<button class="media pic" ${attr} aria-label="Open">${img(fid,seed?"shot":"backdrop",seed)}${seed?"":`<span class="ov">${esc(F[fid].t)}</span>`}${extra}</button>`}
+/* Don't show the exact same photo twice within a few posts: if the film has no fresh still, the post goes text-only. */
+let RECENT=[];
+function shotFor(fid,seed){const u=pickShot(fid,seed);if(!u)return null;
+  const g=galleryOf(fid);let k=hsh(seed);for(let i=0;i<g.length;i++){const c=g[(k+i)%g.length];if(!RECENT.includes(c)){RECENT=[c,...RECENT].slice(0,8);return (k+i)%g.length}}return null}
 function curatedBody(p,i){
-  if(p.k==="news") return `<div class="ptxt"><strong>${esc(p.h)}</strong>${esc(p.s)}</div>${media(p.f,`data-open="${i}"`)}`;
+  if(p.k==="news") return `<div class="ptxt"><span class="hook">${esc(p.h)}</span>${esc(p.s)}</div>${(()=>{const n=shotFor(p.f,"c"+i);return n===null?"":`<button class="media pic" data-open="${i}" aria-label="Open">${img(p.f,"shot",n+"#")}</button>`})()}`;
   if(p.k==="review"){const f=F[p.f];return `<div class="ptxt"><strong>${esc(p.h)}</strong></div><button class="inner" data-film="${p.f}">${critMini(f)}<span class="ptxt" style="font-size:14.5px">“${esc(f.rev[0][4])}” <span style="color:var(--muted)">— ${esc(f.rev[0][0])}</span></span><span class="cardlink">Read all ${f.rev.length} reviews ›</span></button>`}
   if(p.k==="box"){const f=F[p.f];return `<div class="ptxt"><strong>${esc(p.h)}</strong>${esc(p.s)}</div><button class="inner" data-tab="calendar"><span class="boxbig">${f.box.v}</span><span class="meta"><b>India net</b>· ${esc(f.box.note.toLowerCase())} · ${esc(f.box.src)}</span><span class="cardlink">See all box office ›</span></button>`}
   if(p.k==="poll"){const v=VOTES[p.id];
@@ -577,10 +599,10 @@ function actions(it){const k=it.key,liked=LIKED.has(k),saved=SAVED.has(k),nc=(EX
 function postHTML(it){
   if(it.w){const w=it.w,f=w.film&&F[w.film];const [bg,fg]=candy(w.source);
     return `<article class="card post webpost" id="post-${it.key}"><div class="ph">${f?`<button class="av pic" data-film="${w.film}" aria-label="${esc(f.t)}">${img(w.film)}</button>`:`<span class="av" style="background:${bg};color:${fg}">${esc(ini(w.source))}</span>`}
-      <div class="nm"><b>${esc(f?f.t:w.source)}</b><small>${esc(f?w.source+" · ":"")}${ago(w.ts)}</small></div>${tag(w.tag)}</div>
+      <div class="nm"><b>${esc(f?f.t:w.source)}</b><small>${f?"via "+esc(w.source)+" · ":""}${ago(w.ts)}</small></div>${w.tag==="news"?"":tag(w.tag)}</div>
       <button class="ptxt" data-web="${it.key}" style="text-align:left"><span class="hook">${esc(w.hook||w.title)}</span>${w.sum?esc(w.sum):""}</button>
-      ${f&&hasImg(w.film)?media(w.film,`data-web="${it.key}"`):""}
-      <span class="srcchip">${fav(w.srcUrl)}Via ${esc(w.source)}${(w.also||[]).length?" · ":""}${alsoHTML(w)}</span>
+      ${(()=>{if(!f||!hasImg(w.film))return"";const n=shotFor(w.film,w.id);return n===null?"":`<button class="media pic" data-web="${it.key}" aria-label="Open">${img(w.film,"shot",String(n)+"#")}</button>`})()}
+      ${(w.also||[]).length?`<span class="srcchip">${alsoHTML(w)}</span>`:""}
       ${actions(it)}</article>`}
   const p=POSTS[it.c],r=p.k==="rumour"?RUMS[p.r]:null,fid=r?r.f:p.f,f=F[fid];
   const who=p.k==="review"?"Reviews":p.k==="poll"?"Unmai poll":p.k==="box"?"Box office":r?"Rumour check":p.src;
@@ -599,11 +621,13 @@ function trendHTML(){const t=trending();if(!t.length)return"";
 function briefHTML(){const b=briefs();if(!b.length)return"";
   return `<div class="brief-h">Just in · summaries on the way</div>${b.map(w=>`<button class="brief" data-web="w${w.id}"><b>${esc(w.title)}</b>${tag(w.tag)}<small>${fav(w.srcUrl)}${esc(w.source)} · ${ago(w.ts)}</small></button>`).join("")}`}
 function feed(){
-  const st=swipeList(),hero=topStory(),items=feedItems().filter(it=>!hero||FILM_FILTER||it.key!=="w"+hero.id);
-  return trendHTML()+heroHTML()+(FILM_FILTER?"":`<div class="stories"><button class="story first" data-swipe="${st[0]?.key||""}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span class="l">Catch up</span></button>
+  RECENT=[];
+  const st=swipeList(),hero=FILM_FILTER?null:topStory(),items=feedItems().filter(it=>!hero||it.key!=="w"+hero.id);
+  const pinned=hero?postHTML({key:"w"+hero.id,ts:hero.ts,w:hero}).replace('<article class="card post webpost"','<article class="card post webpost pinned"').replace('<div class="ph">','<span class="pin">📌 Top story</span><div class="ph">'):"";
+  return trendHTML()+pinned+(FILM_FILTER?"":`<div class="stories"><button class="story first" data-swipe="${st[0]?.key||""}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span class="l">Catch up</span></button>
    ${st.map(it=>{const fid=it.w?it.w.film:POSTS[it.c].f;return `<button class="story" data-swipe="${it.key}"><span class="ring ${SEEN.has(it.key)?"seen":""}"><span class="pic">${img(fid)}</span></span><span class="l">${esc(F[fid].t)}</span></button>`}).join("")}</div>`
    +liveBanner())+`<div class="newpill" id="newpill"></div>`
-   +items.slice(0,6).map(postHTML).join("")+briefHTML()+items.slice(6).map(postHTML).join("")
+   +items.map(postHTML).join("")
    +`<div class="end">${I.popcorn}<b>You're all caught up</b>New stories arrive every 15 minutes.</div>`+attribution();
 }
 const attribution=()=>`<nav class="attr" aria-label="Film pages" style="padding-bottom:4px"><a href="/tamil-movie-release-dates.html">Tamil release dates</a> · ${Object.keys(F).filter(id=>F[id].cal||F[id].rev).map(id=>`<a href="/film/${id}.html">${esc(F[id].t)}</a>`).join(" · ")} · <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></nav><p class="attr">Film images from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Headlines link to their publishers. Box office figures are tracker estimates.</p>`;
@@ -673,10 +697,10 @@ function openNews(i){const p=POSTS[i],f=F[p.f];
    ${f.cal||f.rev?`<button class="btn out" data-film="${p.f}">More on ${esc(f.t)}</button>`:""}
    <a class="btn wa" href="${wa(shareText({c:i}))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
 function openWeb(key){const it=ITEM(key);if(!it.w)return;const w=it.w,f=w.film&&F[w.film];
-  sheet(`${f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"backdrop")}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
-   ${w.sum?`<p style="font-size:16px;color:var(--ink)">${esc(w.sum)}</p><p style="font-size:12.5px;color:var(--muted)">Summary written by Unmai from ${esc(w.source)}'s report.${w.tag==="rumour"?" This is a report, not an official announcement.":""}</p>`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
+  sheet(`${f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"shot",w.id)}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
+   ${w.sum?`<p style="font-size:16.5px;line-height:1.6;color:var(--ink)">${esc(clean(w.sum))}</p>${w.tag==="rumour"?`<p style="font-size:13px;color:var(--muted)">This is a report, not an official announcement.</p>`:""}`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
    ${(w.also||[]).length?`<h4>Also reported by</h4><div class="meta" style="flex-wrap:wrap;gap:6px 14px">${w.also.map(a=>`<a href="${esc(a.url)}" target="_blank" rel="noopener" style="display:inline-flex;gap:6px;align-items:center">${fav(a.srcUrl)}${esc(a.source)}</a>`).join("")}</div>`:""}
-   <a class="btn out" href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">Full story on ${esc(w.source)} ↗</a>
+   <p class="credit">${fav(w.srcUrl)}Reported by <a href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">${esc(w.source)}</a></p>
    ${f?`<button class="btn out" data-film="${w.film}">More on ${esc(f.t)}</button>`:""}
    <a class="btn wa" href="${wa(shareText(it))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
 function openRum(i){const r=RUMS[i];
