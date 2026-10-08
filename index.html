@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Unmai: Tamil cinema news, critic reviews, rumour checks and release dates, with sources for everything.">
+<meta name="theme-color" content="#F26B1D">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Unmai Cinema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Libre+Franklin:wght@400;500;600;700;800&family=Hind+Madurai:wght@600&display=swap">
+<style>
+/* Layout: one centred phone-width column. Four tabs in a bottom bar: Feed (social posts + stories), Reviews, Rumours, Calendar. Details open as bottom sheets. Light only. */
+:root{
+  --bg:#FFFFFF; --ink:#0F1419; --soft:#3B4249; --muted:#6E767D; --line:#E7E9EB; --tint:#F4F5F7;
+  --brand:#F26B1D; --brand-soft:#FFF1E8; --like:#E0245E;
+  --good:#12844D; --good-bg:#E6F5EC; --mid:#B26B00; --mid-bg:#FDF2DE; --bad:#D23A35; --bad-bg:#FCE9E8; --rum:#5B3FC4; --rum-bg:#EEEAFC;
+  --ui:"Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cond:"Barlow Condensed", "Arial Narrow", sans-serif;
+  --ta:"Hind Madurai", system-ui, sans-serif;
+  color-scheme:light;
+}
+*{-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+button:focus:not(:focus-visible){outline:none}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.app{max-width:600px;margin:0 auto;min-height:100vh;border-inline:1px solid var(--line);padding-bottom:calc(72px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
+@media (max-width:620px){.app{border:0}}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:10px 16px}
+.mark{width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-family:var(--ta);font-size:18px;padding-top:2px;box-sizing:border-box;flex:none}
+.brand h1{margin:0;font-weight:800;font-size:20px;letter-spacing:-.02em;flex:1}
+.brand small{font-size:11px;color:var(--muted)}
+.ibtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink);position:relative}
+.ibtn svg{width:22px;height:22px}
+.dot{position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:8px;background:var(--brand);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 3px;box-sizing:border-box}
+
+/* bottom tabs */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar nav{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;color:var(--muted);font-size:11.5px;font-weight:600}
+.tabbar svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--ink);font-weight:800}
+.tabbar button[aria-current="page"] svg{stroke-width:2.5}
+
+/* shared */
+.art{position:absolute;inset:0}
+.grain{position:absolute;inset:0;opacity:.3;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.pic{position:relative;overflow:hidden}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:4px;white-space:nowrap}
+.t-official{color:var(--good);background:var(--good-bg)} .t-buzz{color:var(--mid);background:var(--mid-bg)} .t-rumour{color:var(--rum);background:var(--rum-bg)} .t-busted{color:var(--bad);background:var(--bad-bg)} .t-happened{color:var(--good);background:var(--good-bg)} .t-conf{color:var(--good);background:var(--good-bg)} .t-tent{color:var(--mid);background:var(--mid-bg)} .t-ott{color:var(--soft);background:var(--tint)}
+.meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.meta b{color:var(--soft);font-weight:600}
+.intro{padding:14px 16px 6px;color:var(--muted);font-size:13.5px;margin:0}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;padding:13px 16px;border-radius:999px;background:var(--brand);color:#fff;text-align:center;text-decoration:none}
+.btn.out{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.wa{background:#1FA855}
+.sec-h{padding:22px 16px 4px;font-size:19px;font-weight:800;margin:0}
+
+/* stories */
+.stories{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.stories::-webkit-scrollbar{display:none}
+.story{flex:0 0 68px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.ring{width:66px;height:66px;border-radius:50%;padding:2.5px;box-sizing:border-box;background:conic-gradient(from 200deg,var(--brand),#F43F5E,#F59E0B,var(--brand))}
+.ring.seen{background:var(--line)}
+.ring .pic{width:100%;height:100%;border-radius:50%;border:2.5px solid #fff;box-sizing:border-box}
+.story span{font-size:12px;color:var(--soft);max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.story.first .ring{background:var(--ink)}
+.story.first .pic{display:grid;place-items:center;background:var(--ink);color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:1.1}
+
+/* feed posts */
+.post{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:14px 16px 6px;border-bottom:1px solid var(--line)}
+.av{width:44px;height:44px;border-radius:50%;position:relative;overflow:hidden;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;letter-spacing:.02em}
+.av b{position:relative}
+.pb{min-width:0;display:flex;flex-direction:column;gap:8px}
+.ph{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14.5px;line-height:1.2}
+.ph b{font-weight:800}
+.ph .src{color:var(--muted)}
+.ph .tag{margin-left:auto}
+.ptxt{margin:0;font-size:15.5px;line-height:1.5;color:var(--ink)}
+.ptxt strong{display:block;font-weight:800;margin-bottom:2px}
+.media{aspect-ratio:16/9;max-width:100%;border-radius:16px;border:1px solid var(--line);display:block;width:100%}
+.media span{position:absolute;left:14px;bottom:12px;font-family:var(--cond);font-weight:800;font-size:26px;line-height:1;color:#fff;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.stamp{position:absolute;right:14px;top:14px;transform:rotate(6deg);border:3px solid #fff;color:#fff;font-family:var(--cond);font-weight:800;font-size:22px;letter-spacing:.06em;padding:2px 10px;border-radius:6px;background:rgba(210,58,53,.85)}
+.card{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box}
+.sc2{display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap}
+.sc2 div{display:flex;flex-direction:column}
+.sc2 b{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.sc2 small{font-size:12px;font-weight:600;color:var(--muted);margin-top:3px}
+.verdict{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px;align-self:center}
+.v-good{color:var(--good);background:var(--good-bg)} .v-mid{color:var(--mid);background:var(--mid-bg)} .v-bad{color:var(--bad);background:var(--bad-bg)}
+.cardlink{font-size:13.5px;font-weight:700;color:var(--brand)}
+.boxbig{font-size:38px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.steps{display:flex;gap:4px}
+.steps i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.steps i.on{background:var(--mid)} .steps.done i{background:var(--good)} .steps.bust i{background:var(--bad)}
+.who{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.who .acc{font-weight:700}
+.poll{display:flex;flex-direction:column;gap:8px}
+.poll button{border-radius:999px;padding:11px 16px;font-weight:700;box-shadow:inset 0 0 0 1.5px var(--brand);color:var(--brand);text-align:center}
+.pbar{position:relative;height:40px;border-radius:12px;background:var(--tint);overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-weight:700;font-size:14px}
+.pbar i{position:absolute;inset:0 auto 0 0;background:var(--brand-soft)}
+.pbar.mine i{background:#FFDCC6}
+.pbar span{position:relative}
+.acts{display:flex;justify-content:space-between;max-width:360px;margin-left:-8px;padding-bottom:4px}
+.acts button,.acts a{display:flex;align-items:center;gap:6px;padding:8px;border-radius:999px;color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;font-variant-numeric:tabular-nums}
+.acts svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.acts .liked{color:var(--like)} .acts .liked svg{fill:var(--like);stroke:var(--like)}
+.acts .saved{color:var(--brand)} .acts .saved svg{fill:var(--brand);stroke:var(--brand)}
+.end{padding:28px 16px;text-align:center;color:var(--muted);font-size:13.5px}
+
+/* reviews */
+.film{display:grid;grid-template-columns:68px minmax(0,1fr);gap:14px;padding:14px 16px;border-bottom:1px solid var(--line);width:100%;box-sizing:border-box;align-items:center}
+.film .pic{aspect-ratio:2/3;max-width:100%;border-radius:8px}
+.film h3{margin:0 0 2px;font-size:17px;font-weight:800}
+.film .g{font-size:13px;color:var(--muted);margin-bottom:8px}
+.scores{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline}
+.score{display:flex;flex-direction:column;gap:1px}
+.score b{font-size:22px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.score small{font-size:11.5px;color:var(--muted);font-weight:600}
+.lock{color:var(--muted)!important;font-size:15px!important}
+
+/* rumours */
+.filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:14px 16px 6px}
+.filters::-webkit-scrollbar{display:none}
+.filters button{flex:none;padding:7px 14px;border-radius:999px;font-size:14px;font-weight:600;color:var(--soft);box-shadow:inset 0 0 0 1px var(--line)}
+.filters button[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:none}
+.rum{display:flex;flex-direction:column;gap:8px;padding:16px;border-bottom:1px solid var(--line);width:100%;box-sizing:border-box}
+.rum h2{margin:0;font-size:17px;line-height:1.3;font-weight:700}
+.src-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+.src-row b{font-size:14.5px}.src-row small{font-size:12.5px;color:var(--muted)}
+.src-row .p{font-size:20px;font-weight:800;grid-row:span 2;font-variant-numeric:tabular-nums}
+.bar{grid-column:1/-1;height:5px;border-radius:3px;background:var(--tint);overflow:hidden}.bar i{display:block;height:100%}
+
+/* calendar */
+.mon{padding:18px 16px 6px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cal{display:grid;grid-template-columns:46px 44px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line);width:100%;box-sizing:border-box}
+.day{text-align:center;line-height:1}
+.day b{display:block;font-family:var(--cond);font-weight:800;font-size:26px}
+.day small{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.day.word b{font-family:var(--ui);font-size:11px;font-weight:800;line-height:1.2;color:var(--soft);overflow-wrap:anywhere}
+.cal .pic{width:44px;aspect-ratio:2/3;border-radius:6px}
+.cal h3{margin:0;font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.bo{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);width:100%;box-sizing:border-box}
+.bo .rk{font-family:var(--cond);font-weight:800;font-size:22px;color:var(--muted);text-align:center}
+.bo h3{margin:0;font-size:15.5px;font-weight:700}
+.bo p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.bo .amt{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(15,20,25,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:600px;max-height:92%;overflow-y:auto;border-radius:20px 20px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.6}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center;margin-bottom:4px;flex:none}
+.sheet h2{margin:0;font-size:22px;line-height:1.25;font-weight:800;text-wrap:balance}
+.sheet p{margin:0;color:var(--soft);line-height:1.6}
+.sheet h4{margin:6px 0 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tl{display:flex;flex-direction:column;border-left:2px solid var(--line);margin-left:5px}
+.tl div{padding:0 0 14px 16px;position:relative;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--soft)}
+.tl div::before{content:"";position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--brand)}
+.tl b{font-size:12.5px;color:var(--ink)}
+.big2{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;flex:none}
+.big2>div{padding:14px;display:flex;flex-direction:column;gap:2px}
+.big2>div+div{border-left:1px solid var(--line)}
+.big2 b{font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.big2 span{font-size:13px;font-weight:700}
+.big2 small{font-size:12px;color:var(--muted)}
+.meter{height:5px;border-radius:3px;background:var(--tint);overflow:hidden;margin-top:6px}.meter i{display:block;height:100%;background:var(--brand)}
+.cons{padding:12px 14px;background:var(--tint);border-radius:12px;font-size:15px;line-height:1.55}
+.cons small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--tint);border-radius:999px;padding:4px;flex:none}
+.seg button{text-align:center;padding:9px;border-radius:999px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button[aria-selected="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.rv{display:flex;flex-direction:column;gap:3px;padding:12px 0;border-bottom:1px solid var(--line)}
+.rv:last-child{border-bottom:0}
+.rv .w{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:700}
+.rv .w small{font-weight:500;color:var(--muted)}
+.rv p{font-size:14.5px}
+.ok{font-size:12px;font-weight:700;color:var(--good)}
+.cmt{display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.cmt .av{width:36px;height:36px;background:var(--tint);color:var(--soft);font-size:13px}
+.cmt b{font-size:14px}.cmt small{color:var(--muted);font-size:12.5px;margin-left:6px;font-weight:500}
+.cmt p{margin:2px 0 0;font-size:14.5px;color:var(--ink)}
+.cin{display:flex;gap:8px}
+.cin input{flex:1;min-width:0;font:inherit;font-size:16px;border:1px solid var(--line);border-radius:999px;padding:10px 14px}
+.cin button{font-weight:700;color:var(--brand);padding:0 6px}
+.drop{border:1.5px dashed var(--line);border-radius:14px;padding:20px;text-align:center;cursor:pointer;position:relative;display:block}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.stars{display:flex;gap:8px}
+.stars button{flex:1;height:44px;border-radius:12px;text-align:center;font-weight:700;box-shadow:inset 0 0 0 1px var(--line)}
+.stars button.on{background:var(--brand);color:#fff;box-shadow:none}
+textarea{font:inherit;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:76px;resize:vertical;width:100%;box-sizing:border-box}
+
+/* 60-second swipe */
+.sw{position:fixed;inset:0;z-index:60;background:#000;display:flex;justify-content:center}
+.deck{width:100%;max-width:460px;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;background:#fff}
+.deck::-webkit-scrollbar{display:none}
+.slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column}
+.slide .pic{flex:0 0 44%}
+.slide .pic span{position:absolute;left:18px;bottom:16px;font-family:var(--cond);font-weight:800;font-size:34px;line-height:.95;color:#fff;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.slide .bd{flex:1;padding:18px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.slide h2{margin:0;font-size:21px;line-height:1.28;font-weight:800;text-wrap:balance}
+.slide p{margin:0;color:var(--soft);font-size:15.5px;line-height:1.6}
+.swhint{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.swhint svg{width:16px;height:16px;animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateY(-4px)}}
+.swx{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:2;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:17px;text-align:center}
+.count{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:2;color:#fff;font-size:12px;font-weight:700;background:rgba(0,0,0,.5);padding:4px 10px;border-radius:999px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:600;font-size:13.5px;z-index:90;white-space:nowrap}
+/* live */
+.live-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;margin:12px 16px 4px;padding:12px 14px;border-radius:16px;background:#FFF0F3;box-shadow:inset 0 0 0 1px #FFD3DD;width:calc(100% - 32px);box-sizing:border-box}
+.live-b b{display:block;font-size:14.5px;font-weight:800;color:#C21543}
+.live-b span.s{display:block;font-size:13px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live-b .go{font-weight:800;color:#C21543;font-size:14px}
+.pulse{width:12px;height:12px;border-radius:50%;background:#E0245E;box-shadow:0 0 0 0 rgba(224,36,94,.5);animation:pl 1.6s infinite}
+@keyframes pl{70%{box-shadow:0 0 0 10px rgba(224,36,94,0)}100%{box-shadow:0 0 0 0 rgba(224,36,94,0)}}
+.livetag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:.06em;color:#fff;background:#E0245E;padding:3px 7px;border-radius:4px}
+.livetag i{width:6px;height:6px;border-radius:50%;background:#fff}
+.lv{position:fixed;inset:0;z-index:55;background:#fff;overflow-y:auto}
+.lv-in{max-width:600px;margin:0 auto;padding-bottom:40px}
+.lv-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.lv-top .t{flex:1;min-width:0}
+.lv-top b{font-size:18px;font-weight:800;margin-right:6px}
+.lv-top small{display:block;font-size:12.5px;color:var(--muted)}
+.lv-sec{padding:16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.lv-sec h3{margin:0;font-size:16px;font-weight:800}
+.vbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--tint)}
+.vbar i{display:block;height:100%}
+.vleg{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.vleg b{font-variant-numeric:tabular-nums}
+.vhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.vhead strong{font-size:26px;font-weight:800;letter-spacing:-.01em}
+.vhead small{font-size:12.5px;color:var(--muted)}
+.ci{border-radius:16px;background:var(--tint);padding:14px;display:flex;flex-direction:column;gap:10px}
+.ci p{margin:0;font-size:14px;color:var(--soft)}
+.ci .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ci .row .btn{font-size:14px;padding:12px 10px}
+.ci .done{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--good);font-size:14.5px}
+.votes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.votes button{padding:14px 6px;border-radius:14px;text-align:center;font-weight:800;font-size:15px;box-shadow:inset 0 0 0 1.5px var(--line);background:#fff}
+.votes button.v-s{color:var(--good)}.votes button.v-o{color:var(--mid)}.votes button.v-m{color:var(--bad)}
+.votes button[aria-pressed="true"].v-s{background:var(--good);color:#fff;box-shadow:none}
+.votes button[aria-pressed="true"].v-o{background:var(--mid);color:#fff;box-shadow:none}
+.votes button[aria-pressed="true"].v-m{background:var(--bad);color:#fff;box-shadow:none}
+.lnk{font-size:13px;font-weight:700;color:var(--brand);align-self:flex-start;text-decoration:none}
+.badge-th{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--good);background:var(--good-bg);padding:2px 7px;border-radius:999px}
+.rx{display:grid;grid-template-columns:36px minmax(0,1fr);gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.rx .av{width:36px;height:36px;background:var(--tint);color:var(--soft);font-size:13px}
+.rx .h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14px}
+.rx .h b{font-weight:700}.rx .h small{color:var(--muted);font-size:12.5px}
+.rx p{margin:3px 0 0;font-size:15px}
+.rx .when{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.rx.new{animation:fadein .5s ease-out}
+@keyframes fadein{from{background:#FFF5EE}}
+.lv-filter{display:flex;gap:8px;padding:12px 16px 4px}
+.lv-filter button{padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--soft);box-shadow:inset 0 0 0 1px var(--line)}
+.lv-filter button[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:none}
+.newpill{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));z-index:9;display:flex;justify-content:center;height:0;overflow:visible}
+.newpill button{transform:translateY(8px);background:var(--brand);color:#fff;font-weight:700;font-size:13.5px;padding:8px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(242,107,29,.35);display:flex;align-items:center;gap:6px}
+.newpill svg{width:15px;height:15px}
+/* tips */
+.tipcard{margin:14px 16px 4px;padding:14px;border-radius:16px;background:var(--brand-soft);display:flex;flex-direction:column;gap:10px}
+.tipcard b{font-size:16px}.tipcard p{margin:0;font-size:14px;color:var(--soft)}
+.tipcard .btn{align-self:flex-start;padding:10px 18px;font-size:14.5px}
+.tipster{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--brand);background:var(--brand-soft);padding:2px 7px;border-radius:999px}
+select,.sheet input[type=url]{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;box-sizing:border-box;background:#fff;color:var(--ink)}
+label.fl{font-size:13px;font-weight:700;color:var(--soft);margin-bottom:-8px}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}.rx.new{animation:none}}
+@media (hover:hover){.film:hover,.rum:hover,.cal:hover,.bo:hover{background:#FAFBFC}.acts button:hover{background:var(--tint)}}
+button:active{opacity:.75}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}.swhint svg{animation:none}}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <header class="top"><div class="brand">
+    <span class="mark">உ</span><h1 id="ttl">Unmai</h1><small>Beta</small>
+    <button class="ibtn" id="savedBtn" aria-label="Saved posts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span class="dot" id="savedDot" hidden></span></button>
+  </div></header>
+  <main id="view"></main>
+</div>
+<div class="tabbar"><nav aria-label="Sections">
+  <button data-tab="feed"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Feed</button>
+  <button data-tab="reviews"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.5 6 .8-4.4 4.1 1.1 6L12 16.6 6.7 19.4l1.1-6L3.4 9.3l6-.8z"/></svg>Reviews</button>
+  <button data-tab="rumours"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.4"/></svg>Rumours</button>
+  <button data-tab="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</button>
+</nav></div>
+<div id="layer"></div>
+
+<script>
+/* ===== Real data, gathered 8 Oct 2026. Every item links to its source. Box office figures are tracker estimates. ===== */
+const PAL={plum:["#2A0F2E","#8E2B57"],navy:["#0B1A33","#2F6CA8"],blood:["#120B0B","#8A1A1A"],rust:["#2B140A","#B5541B"],gold:["#231A07","#A87A12"],jade:["#0A2420","#1F7A66"],ash:["#121418","#4A525E"],indigo:["#12103A","#4C46B8"],teal:["#071F26","#16808F"],olive:["#1A1C0B","#6B7A1F"],ember:["#1F0B05","#C2410C"]};
+// review: [outlet, critic, rating, verdict 1=positive 0=mixed -1=negative, our one-line summary, url]
+const F={
+ baththa:{t:"Baththa",p:"gold",gen:"Gangster comedy-drama",dir:"Balaji Tharaneetharan",cast:"Vijay Sethupathi, Lijomol Jose",where:"In theatres since 1 Oct",
+  rev:[["The Hollywood Reporter India","Sruthi Ganapathy Raman","",1,"A charming friendship drama about a gangster who comes apart while stuck in a school toilet.","https://www.hollywoodreporterindia.com/reviews/theatrical/baththa-movie-review-vijay-sethupathi-shines-in-a-delightful-unravelling-of-a-gangster"],
+   ["The News Minute","Subha J Rao","",1,"A big-hearted redemption story with a standout child actor. One song could have gone.","https://www.thenewsminute.com/flix/baththa-balaji-tharaneetharans-vijay-sethupathi-starrer-is-powered-by-a-big-heart"],
+   ["Deccan Herald","Arathi Kannan","4/5",1,"Tender in a Majid Majidi way, with compelling lead performances.","https://www.deccanherald.com/entertainment/baththa-movie-review-a-gangster-comes-alive-4168210"],
+   ["DT Next","Manivasagan Namasivayam","4/5",1,"Warm, funny and moving, lifted by Sethupathi and the music.","https://www.dtnext.in/entertainment/cinema/baththa-film-review-a-gangsters-journey-from-rage-to-redemption"]],
+  box:{n:14.04,v:"₹14.04 cr",note:"First week",src:"The Week, citing Sacnilk",url:"https://theweek.in/news/entertainment/2026/10/08/baththa-first-week-box-office-india-vijay-sethupathi-movie.html"}},
+ dorothy:{t:"Dorothy",p:"plum",gen:"Gangster drama",dir:"Karthik Subbaraj",cast:"Keerthy Suresh, Sananth, Rishikanth",where:"In theatres since 25 Sep",
+  rev:[["The Week","Sajin Shrijith","5/5",1,"Subbaraj's most complex and daring film yet.","https://www.theweek.in/review/movies/2026/09/25/karthik-subbaraj-dorothy-movie-review.html"],
+   ["The Hollywood Reporter India","Prathyush Parasuraman","",0,"Striking form and a great Ilaiyaraaja score, but the moralising is heavy-handed.","https://www.hollywoodreporterindia.com/reviews/theatrical/dorothy-movie-review-the-karthik-subbaraj-drama-is-a-wild-swing-that-is-as-troubling-as-it-is-rewarding"],
+   ["The Federal","Kirubhakar Purushothaman","",1,"Bold and unlike anything in Tamil cinema, though the last act feels rushed.","https://thefederal.com/film-reviews/dorothy-movie-review-karthik-subbarajs-latest-is-bold-beautiful-unprecedented-in-tamil-cinema-257707"]],
+  box:{n:9.89,v:"₹9.89 cr",note:"Through day 11",src:"Sacnilk",url:"https://www.sacnilk.com/news/Dorothy_2026_Box_Office_Collection_Day_Wise_Worldwide"}},
+ meesaya:{t:"Meesaya Murukku 2",p:"rust",gen:"Music drama",dir:"Hiphop Tamizha Aadhi",cast:"Hiphop Tamizha Aadhi, Chaithra J Achar, Ketika Sharma",where:"In theatres since 25 Sep",
+  rev:[["DT Next","Manivasagan Namasivayam","3/5",0,"Strong on gatekeeping against North Chennai gaana artists, but preachy with a sluggish second half.","https://www.dtnext.in/entertainment/cinema/meesaya-murukku-2-aadhi-takes-on-gatekeepers"]],
+  box:{n:21.45,v:"₹21.45 cr",note:"Total so far",src:"Sacnilk",url:"https://www.sacnilk.com/movie/Meesaya_Murukku_2_2026"}},
+ sardar2:{t:"Sardar 2",p:"ash",gen:"Spy thriller",dir:"P. S. Mithran",cast:"Karthi, S. J. Suryah, Malavika Mohanan",where:"On Prime Video since 1 Oct",
+  rev:[["Deccan Chronicle","BVS Prakash","",-1,"A sound premise ruined by silly execution and a bloated second half.","https://www.deccanchronicle.com/entertainment/sardar-2-review-a-cringe-fest-disguised-as-a-spy-thriller-1986367"],
+   ["Gulte","Satya","1.5/5",-1,"Borrows heavily from Hollywood spy films, with a weak, slow screenplay.","https://www.gulte.com/moviereviews/430832/sardar-2-movie-review"],
+   ["BollywoodShaadis","","",-1,"Karthi tries hard, but the treatment is dated and the VFX poor.","https://www.bollywoodshaadis.com/articles/sardar-2-review-84357"]],
+  box:{n:16.33,v:"₹16.33 cr",note:"Through day 22",src:"Sacnilk",url:"https://www.sacnilk.com/news/Sardar_2_2026_Box_Office_Collection_Day_Wise_Worldwide"}},
+ sigma:{t:"Sigma",p:"indigo",gen:"Heist action-comedy",dir:"Jason Sanjay",cast:"Sundeep Kishan, Faria Abdullah, Raju Sundaram",where:"In theatres since 2 Oct",
+  rev:[["Gulte","Satya","1.5/5",-1,"A forgettable debut that tests your patience.","https://www.gulte.com/moviereviews/434813/sigma-movie-review"],
+   ["Deccan Chronicle","","",-1,"Lacklustre writing and average direction despite heavy buzz.","https://www.deccanchronicle.com/entertainment/tollywood/jason-sanjays-sigma-fails-despite-heavy-buzz-in-telugu-states-1993203"],
+   ["M9 News","","",-1,"Calls it an outdated bore.","https://www.m9.news/reviews/sigma-movie-telugu-review-rating/"]],
+  box:{n:7.61,v:"₹7.61 cr",note:"Through day 6",src:"Sacnilk",url:"https://www.sacnilk.com/news/Sigma_2026_Box_Office_Collection_Day_Wise_Worldwide"}},
+ yezhu:{t:"Yezhu Kadal Yezhu Malai",p:"teal",gen:"Fantasy drama",dir:"Ram",cast:"Nivin Pauly, Soori, Anjali",where:"In theatres since 1 Oct",
+  rev:[["The Hollywood Reporter India","Vishal Menon","",0,"Visually uneven but rich in ideas. A film only Ram could make.","https://www.hollywoodreporterindia.com/reviews/theatrical/yezhu-kadal-yezhu-malai-movie-review-a-one-of-a-kind-chamber-drama-about-humankind"],
+   ["The Week","Sajin Shrijith","2.5/5",0,"The message of compassion gets lost in patchy AI visuals, slow pacing and too many songs.","https://www.theweek.in/review/movies/2026/10/01/yezhu-kadal-yezhu-malai-movie-review.amp.html"]],
+  box:{n:1.51,v:"₹1.51 cr",note:"Through day 7",src:"Sacnilk",url:"https://www.sacnilk.com/news/Yezhu_Kadal_Yezhu_Malai_2026_Box_Office_Collection_Day_Wise_Worldwide"}},
+ // upcoming
+ nova:{t:"Nova",p:"ash",gen:"Horror sci-fi thriller",dir:"Milo",cast:"Raiza Wilson",cal:1,d:"2026-10-09",conf:1,url:"https://www.newkerala.com/news/a/raiza-wilsons-horror-sci-fi-thriller-nova-now-hit-617.htm"},
+ paris:{t:"Paris Cafe",p:"jade",gen:"Streaming release",cal:1,d:"2026-10-09",ott:"Prime Video",conf:1,url:"https://www.filmibeat.com/top-listing/new-ott-releases-this-week-in-tamil-2026-netflix-aha-prime-video-sunnxt-zee5-jiohotstar-and-sonyliv-5-1080.html"},
+ jailer2:{t:"Jailer 2",p:"ember",gen:"Action comedy",dir:"Nelson Dilipkumar",cast:"Rajinikanth, Ramya Krishnan, S. J. Suryah, Vidya Balan",cal:1,d:"2026-10-15",conf:1,note:"Censored U/A 16+, runtime 165 minutes, also releasing in IMAX.",url:"https://www.dtnext.in/entertainment/cinema/jailer-2-gets-censor-runtime-details-rajinikanth-starrer-set-for-imax-release"},
+ appakutty:{t:"Appa Kutty",p:"olive",gen:"Family action drama",dir:"Mu. Maran",cast:"Vijay Antony, Preethi Asrani",cal:1,d:"2026-10-16",conf:1,url:"https://www.newkerala.com/news/a/vijay-antonys-appa-kutty-hit-screens-october-16-334.htm"},
+ irandu:{t:"Irandu Vaanam",p:"navy",gen:"Musical romance",dir:"Ramkumar",cast:"Vishnu Vishal, Mamitha Baiju",cal:1,d:"2026-10-23",conf:1,url:"https://www.dtnext.in/entertainment/cinema/vishnu-vishal-mamitha-baijus-irandu-vaanam-to-hit-screens-on-october-23"},
+ delivery:{t:"Delivery Boy",p:"rust",gen:"Action drama",dir:"Nani",cast:"Leo Sivakumar, Radhika Sarathkumar",cal:1,d:"2026-10-23",conf:1,url:"https://www.newkerala.com/news/a/radhika-sarathkumar-starrer-delivery-boy-hit-screens-october-23-924.htm"},
+ kallapart:{t:"Kallapart",p:"blood",gen:"Thriller",dir:"Rajapandi",cast:"Arvind Swamy, Regina Cassandra",cal:1,d:"2026-10-23",conf:0,note:"Only listed by release-calendar sites. The makers haven't announced it.",url:"https://filmibeat.com/tamil/movies/kallapart.html"},
+ scene:{t:"Scene",p:"indigo",gen:"Drama",dir:"Jithu Madhavan",cast:"Suriya, Nazriya, Naslen",cal:1,d:"2026-11-06",conf:1,label:"6 Nov",grp:"November 2026",url:"https://www.dtnext.in/entertainment/cinema/suriyas-scene-set-for-deepavali-release"},
+ mookuthi:{t:"Mookuthi Amman 2",p:"plum",gen:"Devotional fantasy",dir:"Sundar C",cast:"Nayanthara, Regina Cassandra",cal:1,d:"2026-11-06",conf:1,note:"There is an unconfirmed report that it may move. See Rumours.",url:"https://www.dtnext.in/entertainment/cinema/nayantharas-mookuthi-amman-2-to-hit-screens-on-diwali-teaser-released"},
+ marshal:{t:"Marshal",p:"gold",gen:"Action",dir:"Tamizh",cast:"Karthi, Kalyani Priyadarshan",cal:1,d:"2026-11-07",conf:0,label:"Deepavali",grp:"November 2026",note:"Reported for Deepavali back in March. No date announced.",url:"https://www.dtnext.in/entertainment/cinema/karthis-marshal-likely-to-hit-screens-for-deepavali-this-year"},
+ blackgold:{t:"Black Gold",p:"ash",gen:"Thriller",dir:"Dheeran Arunkumar",cast:"Vetri",cal:1,d:"2026-11-13",conf:1,url:"https://www.newkerala.com/news/a/vetri-starrer-black-gold-hit-screens-november-13-575.htm"},
+ om:{t:"Om",p:"blood",gen:"Action",dir:"Rajkumar Periasamy",cast:"Dhanush, Mammootty, Sai Pallavi, Sreeleela",cal:1,d:"2026-11-20",conf:1,note:"Moved from 16 Oct to avoid clashing with Jailer 2.",url:"https://www.newkerala.com/news/a/dhanush-mammootty-starrer-om-hit-screens-november-20-200.htm"},
+ sathyavan:{t:"Sathyavan Savithiri",p:"teal",gen:"Courtroom drama",dir:"Praveen S Vijay",cast:"Keerthy Suresh, Mysskin",cal:1,d:"2026-11-20",conf:1,url:"https://www.newkerala.com/news/a/keerthy-suresh-mysskin-starrer-sathyavan-savithiri-now-hit-screens-281.htm"},
+ fahadh:{t:"Fahadh x Prem Kumar film",p:"jade",gen:"Thriller",dir:"C. Prem Kumar",cast:"Fahadh Faasil",cal:1,d:"2026-12-15",conf:0,label:"Dec",grp:"December 2026",note:"Fahadh named December in an interview. No date fixed.",url:"https://www.sacnilk.com/news/fahadh-faasil-and-meiyazhagan-director-premkumars-emotional-thriller-locks-december-2026-theatrical-release"},
+ dharman:{t:"Dharman",p:"gold",gen:"Drama",dir:"Ashwath Marimuthu",cast:"Rajinikanth",cal:1,d:"2027-01-14",conf:0,label:"Pongal",grp:"January 2027",note:"Reported as a possible Pongal 2027 release. Not official.",url:"https://www.gulte.com/movienews/426073/rajinikanth-to-deliver-double-dhamaka-with-just-3-month-gap"},
+ seyon:{t:"Seyon",p:"olive",gen:"Rural action",dir:"Sivakumar Murugesan",cast:"Sivakarthikeyan, Bhagyashri Borse",cal:1,d:"2099-01-01",conf:0,label:"TBA",grp:"Date not fixed",note:"Makers said October, but on 7 Oct Sivakarthikeyan said only half the film is done.",url:"https://www.dtnext.in/entertainment/cinema/hereafter-i-will-only-do-mass-entertainers-actor-sivakarthikeyan"},
+ arasan:{t:"Arasan",p:"rust",gen:"Gangster drama",dir:"Vetrimaaran",cast:"Silambarasan, Vijay Sethupathi",cal:1,d:"2099-01-02",conf:0,label:"TBA",grp:"Date not fixed",note:"Silambarasan said on 4 Sep it will skip Pongal 2027 too. No date.",url:"https://www.hollywoodreporterindia.com/features/insight/arasan-silambarasan-tr-confirms-film-will-skip-pongal-2027-release-compares-films-scale-to-dhurandhar"},
+ dhruva:{t:"Dhruva Natchathiram",p:"navy",gen:"Spy thriller",dir:"Gautham Menon",cast:"Vikram",cal:1,d:"2099-01-03",conf:0,label:"TBA",grp:"Date not fixed",note:"Release is tied to a court-supervised settlement. No date.",url:"https://en.wikipedia.org/wiki/Dhruva_Natchathiram_(upcoming_film)"},
+ mandaadi:{t:"Mandaadi",p:"teal",gen:"Sports drama",dir:"Mathimaran Pugazhendhi",cast:"Soori, Suhas, Mahima Nambiar"},
+ mrbhaarath:{t:"Mr. Bhaarath",p:"ash",gen:"Comedy",dir:"Niranjan",cast:"Bhaarath Balraj"},
+ // only in rumours
+ daredevil:{t:"Dare Devil",p:"blood",gen:"Ajith Kumar's next",dir:"Adhik Ravichandran",cast:"Ajith Kumar"},
+ sk27:{t:"SK27",p:"indigo",gen:"Sivakarthikeyan's next",dir:"Ramkumar Balakrishnan",cast:"Sivakarthikeyan"},
+ maari3:{t:"Maari 3",p:"ember",gen:"Rumoured sequel",cast:"Dhanush"},
+ vpsk:{t:"Venkat Prabhu x SK",p:"jade",gen:"Shelved project",dir:"Venkat Prabhu",cast:"Sivakarthikeyan"},
+ sibiraj:{t:"Underdog Films",p:"olive",gen:"New production house",cast:"Sibiraj"},
+};
+// rumour: out = outlet key for the tally
+const RUMS=[
+ {f:"jailer2",st:"rumour",out:"Pinkvilla",t:"Jailer 2's first cut reportedly ran about 4 hours 25 minutes before nearly 100 minutes were trimmed",src:"Pinkvilla, citing a tracker on X",date:"7 Oct",tl:[["7 Oct","Reported by Pinkvilla, citing Movies Singapore on X. M9 News carried it too and said some insiders call it false."],["7 Oct","Only the final runtime is official: 165 minutes."]],url:"https://www.pinkvilla.com/entertainment/south/jailer-2-did-rajinikanth-starrer-makers-cut-100-mins-from-its-runtime-of-more-than-4-hours-heres-what-we-know-1405787"},
+ {f:"daredevil",st:"rumour",out:"Pinkvilla",t:"Unni Mukundan to replace Mohanlal in Ajith Kumar's Dare Devil",src:"Pinkvilla, citing trackers on X",date:"29 Sep",tl:[["18 Aug","Deccan Chronicle reported Mohanlal left the film over his fee. Never confirmed."],["18 Sep","M9 News said Kiccha Sudeep was being considered."],["29 Sep","Pinkvilla reported Unni Mukundan instead. Different outlets, different names, so treat with care."]],url:"https://www.pinkvilla.com/entertainment/south/dare-devil-ajith-kumar-starrer-to-feature-marco-star-unni-mukundan-instead-of-mohanlal-heres-what-we-know-1405676"},
+ {f:"sk27",st:"rumour",out:"Pinkvilla",t:"SK27 to feature a remix of Rajinikanth's 'Naan Polladhavan' song with 200 dancers",src:"Pinkvilla, citing Valai Pechu",date:"30 Sep",tl:[["30 Sep","Reported by Pinkvilla, citing the Valai Pechu YouTube channel."]],url:"https://www.pinkvilla.com/entertainment/south/sk27-sivakarthikeyan-starrer-to-remix-rajinikanths-iconic-dance-number-with-200-artists-heres-what-we-know-1405689"},
+ {f:"mookuthi",st:"rumour",out:"Andhravilas",t:"Mookuthi Amman 2 may leave its Deepavali slot to redo VFX",src:"Andhravilas, citing Kollywood sources",date:"19 Sep",tl:[["19 Sep","Reported by Andhravilas and TrackTollywood."],["8 Oct","No official change. The makers' 6 Nov date still stands."]],url:"https://andhravilas.net/nayanthara-mookuthi-amman-2-release-postponed-reason/"},
+ {f:"scene",st:"rumour",out:"M9 News",t:"Naslen to play the villain opposite Suriya in Scene",src:"M9 News, citing social media",date:"17 Sep",tl:[["17 Sep","Reported by M9 News. Naslen is in the cast, but his role isn't confirmed."]],url:"https://www.m9.news/tamil-movie-news/naslen-villain-opposite-suriya-scene/"},
+ {f:"jailer2",st:"rumour",out:"Bollywood Hungama",t:"Jailer 2's streaming rights sold for ₹160 crore, a record for a Tamil film",src:"Bollywood Hungama",date:"19 Aug",tl:[["19 Aug","Reported by Bollywood Hungama. The buyer hasn't been named."]],url:"https://www.freepressjournal.in/entertainment/ott-streaming-rights-of-rajinikanths-jailer-2-sold-for-160-crore-biggest-amount-for-a-tamil-film-report"},
+ {f:"maari3",st:"rumour",out:"M9 News",t:"Dhanush has asked Balaji Mohan to write Maari 3",src:"M9 News",date:"3 Sep",tl:[["3 Sep","Reported by M9 News, which also floated Anirudh as composer."]],url:"https://www.m9.news/tamil-movie-news/dhanush-eyes-maari-3-balaji-mohan-anirudh/"},
+ {f:"jailer2",st:"busted",out:"Sacnilk",t:"Jailer 2 would miss its 15 October release date",src:"Sacnilk, citing trade buzz",date:"15 Sep",tl:[["2 Sep","Sun Pictures posted the 15 Oct date on X."],["15 Sep","Sacnilk reported delay talk from trade sources."],["7 Oct","Censored U/A 16+ with 15 Oct unchanged. Busted."]],url:"https://www.bollywoodhungama.com/news/south-cinema/rajinikanth-starrer-jailer-2-gets-u-a-16-certificate-runtime-revealed-ahead-of-october-15-release/"},
+ {f:"sk27",st:"happened",out:"Pinkvilla",t:"Sivakarthikeyan to team up with Ramkumar Balakrishnan, produced by Sathya Jyothi Films",src:"Pinkvilla, citing Movies Singapore",date:"13 Jun",tl:[["13 Jun","Reported by Pinkvilla, citing a tracker on X."],["25 Sep","SK27 launched with a pooja under Sathya Jyothi Films. Came true."]],url:"https://www.hollywoodreporterindia.com/features/insight/sk27-sivakarthikeyan-and-ramkumar-balakrishnans-film-officially-launched"},
+ {f:"dharman",st:"happened",out:"M9 News",t:"Ashwath Marimuthu to direct Rajinikanth's 173rd film",src:"M9 News",date:"25 Apr",tl:[["25 Apr","M9 News reported Ashwath replacing Cibi Chakaravarthi."],["24 Jun","Raaj Kamal Films announced Dharman with Ashwath directing. Came true."]],url:"https://www.onlykollywood.com/thalaivar-173-title-revealed-as-dharman-ashwath-marimuthu-officially-on-board/"},
+ {f:"vpsk",st:"happened",out:"Social media",t:"Venkat Prabhu's film with Sivakarthikeyan has been shelved",src:"Speculation on social media",date:"Sep",tl:[["Sep","Fans linked comments by Gangai Amaran to the project."],["28 Sep","Venkat Prabhu said on X it couldn't take off. Came true."]],url:"https://www.hollywoodreporterindia.com/features/insight/venkat-prabhu-breaks-silence-on-shelved-sivakarthikeyan-project-actor-says-ill-always-be-a-vp-fan"},
+];
+const POSTS=[
+ {k:"news",f:"jailer2",st:"official",src:"DT Next",date:"7 Oct",h:"Jailer 2 cleared with U/A 16+, runs 2 hours 45 minutes",s:"The censor board's listing shows a 165-minute runtime. Rajinikanth's film releases on 15 October and is also coming to IMAX.",url:"https://www.dtnext.in/entertainment/cinema/jailer-2-gets-censor-runtime-details-rajinikanth-starrer-set-for-imax-release",tl:[["2 Sep","Sun Pictures reaffirmed the 15 Oct date"],["5 Oct","Trailer released"],["7 Oct","Censor certificate and runtime revealed"]]},
+ {k:"box",f:"baththa",date:"8 Oct",h:"Baththa makes ₹14.04 crore in its first week",s:"Vijay Sethupathi's film grew on word of mouth, more than doubling the first-week net of his previous release Ace."},
+ {k:"rumour",r:0},
+ {k:"news",f:"seyon",st:"official",src:"DT Next",date:"7 Oct",h:"Sivakarthikeyan: \"more than half\" of Seyon is done",s:"He also said he will only do mass entertainers from now on. No release date was given, which makes an October release look unlikely.",url:"https://www.dtnext.in/entertainment/cinema/hereafter-i-will-only-do-mass-entertainers-actor-sivakarthikeyan",tl:[["Sep","Makers said Seyon would release in October"],["7 Oct","Sivakarthikeyan's update, no date given"]]},
+ {k:"news",f:"delivery",st:"official",src:"Saregama Tamil",date:"7 Oct",h:"Delivery Boy releases on 23 October",s:"Saregama Tamil shared the release poster for the film starring Leo Sivakumar and Radhika Sarathkumar.",url:"https://www.newkerala.com/news/a/radhika-sarathkumar-starrer-delivery-boy-hit-screens-october-23-924.htm",tl:[["7 Oct","Release date announced"]]},
+ {k:"review",f:"baththa",date:"1 Oct",h:"Critics love Baththa"},
+ {k:"news",f:"jailer2",st:"official",src:"Sun Pictures",date:"5 Oct",h:"Jailer 2 trailer is out",s:"The 2-minute-24-second trailer brings back Rajinikanth as Tiger Muthuvel Pandian, with Mohanlal and Vidya Balan in the mix.",url:"https://www.sacnilk.com/news/jailer-2-trailer-out-rajinikanth-returns-as-tiger-muthuvel-pandian-in-a-bigger-deadlier-hunt",tl:[["5 Oct","Trailer released on YouTube"]]},
+ {k:"poll",f:"jailer2",id:"j2",date:"8 Oct",h:"Will Jailer 2 get better reviews than Jailer?"},
+ {k:"news",f:"blackgold",st:"official",src:"Makers' poster",date:"5 Oct",h:"Black Gold dated for 13 November",s:"The Vetri thriller, already certified U/A, got its release poster.",url:"https://www.newkerala.com/news/a/vetri-starrer-black-gold-hit-screens-november-13-575.htm",tl:[["5 Oct","Release date announced"]]},
+ {k:"rumour",r:7},
+ {k:"news",f:"om",st:"official",src:"Wunderbar Films",date:"2 Oct",h:"Om moves to 20 November to avoid a Jailer 2 clash",s:"Dhanush said the move was out of respect for Jailer 2. The film also stars Mammootty, Sai Pallavi and Sreeleela.",url:"https://www.newkerala.com/news/a/dhanush-mammootty-starrer-om-hit-screens-november-20-200.htm",tl:[["Before","Planned for 16 Oct"],["2 Oct","New date of 20 Nov announced"]]},
+ {k:"review",f:"sigma",date:"2 Oct",h:"Critics are not kind to Jason Sanjay's debut Sigma"},
+ {k:"news",f:"sathyavan",st:"official",src:"Drumsticks Productions",date:"2 Oct",h:"Sathyavan Savithiri set for 20 November",s:"Keerthy Suresh and Mysskin's courtroom drama got a new date after its July slot was dropped.",url:"https://www.newkerala.com/news/a/keerthy-suresh-mysskin-starrer-sathyavan-savithiri-now-hit-screens-281.htm",tl:[["Jul","Earlier date dropped"],["2 Oct","20 Nov announced"]]},
+ {k:"rumour",r:3},
+ {k:"news",f:"nova",st:"official",src:"Director and lead on Instagram",date:"1 Oct",h:"Raiza Wilson's Nova releases 9 October",s:"The horror sci-fi thriller was pushed from 25 September and now has a U/A certificate.",url:"https://www.newkerala.com/news/a/raiza-wilsons-horror-sci-fi-thriller-nova-now-hit-617.htm",tl:[["Sep","Planned for 25 Sep"],["1 Oct","New date of 9 Oct announced"]]},
+ {k:"news",f:"mrbhaarath",st:"official",src:"IANS",date:"1 Oct",h:"Mr. Bhaarath postponed, new date to come",s:"Director Niranjan's film skipped its 1 October release.",url:"https://www.newkerala.com/news/a/director-niranjans-mr-bhaarath-release-postponed-new-date-146.htm",tl:[["1 Oct","Release postponed"]]},
+ {k:"review",f:"dorothy",date:"25 Sep",h:"Dorothy splits critics, but mostly in its favour"},
+ {k:"rumour",r:8},
+];
+const NEW_POOL=[
+ {k:"news",f:"mandaadi",st:"official",src:"Netflix",date:"8 Oct",h:"Mandaadi is now streaming on Netflix",s:"Soori's sports drama, which released in theatres on 4 September, is out on Netflix today.",url:"https://www.filmibeat.com/top-listing/new-ott-releases-this-week-in-tamil-2026-netflix-aha-prime-video-sunnxt-zee5-jiohotstar-and-sonyliv-5-1080.html",tl:[["4 Sep","Theatrical release"],["8 Oct","Streaming on Netflix"]]},
+ {k:"news",f:"sibiraj",st:"official",src:"DT Next",date:"6 Oct",h:"Sibiraj launches his own production house",s:"Underdog Films' first project will star Sibiraj himself.",url:"https://www.dtnext.in/entertainment/cinema/sibiraj-launches-production-house-underdog-films",tl:[["6 Oct","Production house announced"]]},
+];
+const LIVE={f:"jailer2",d:"2026-10-15"};
+
+/* ===== helpers ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const art=p=>{const [a,b]=PAL[p];return `<div class="art" style="background:radial-gradient(90% 80% at 75% 20%,${b}dd 0%,transparent 70%),radial-gradient(60% 60% at 15% 90%,${b}66 0%,transparent 70%),linear-gradient(170deg,${a},#000)"></div><div class="grain"></div>`};
+const ini=t=>t.replace(/[^A-Za-z0-9 ]/g,"").split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+const LABEL={official:"Official",buzz:"Strong buzz",rumour:"Rumour",busted:"Busted",happened:"Came true"};
+const tag=s=>`<span class="tag t-${s}">${LABEL[s]}</span>`;
+const tier=p=>p>=75?["good","Semma"]:p>=50?["mid","Okay"]:["bad","Mokka"];
+const crit=f=>{const r=f.rev||[],pos=r.filter(x=>x[3]===1).length,mix=r.filter(x=>x[3]===0).length;return {n:r.length,pos,mix,neg:r.length-pos-mix,score:r.length?Math.round((pos+mix*.5)/r.length*100):0}};
+const col=p=>`var(--${tier(p)[0]})`;
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],MONL=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const dd=f=>{const d=new Date(f.d+"T00:00");return {day:d.getDate(),mon:MON[d.getMonth()],month:MONL[d.getMonth()]+" "+d.getFullYear(),dow:d.toLocaleDateString("en-IN",{weekday:"short"})}};
+const dateText=f=>f.label&&!/^\d/.test(f.label)?f.label+(f.d<"2099"?" "+f.d.slice(0,4):""):`${dd(f).day} ${dd(f).mon} ${f.d.slice(0,4)}`;
+const daysTo=d=>Math.ceil((new Date(d+"T06:00")-new Date())/864e5);
+let LIKED=new Set(),SAVED=new Set(),SEEN=new Set(),VOTES={};
+try{const s=JSON.parse(localStorage.getItem("unmai-real")||"{}");LIKED=new Set(s.l||[]);SAVED=new Set(s.s||[]);SEEN=new Set(s.n||[]);VOTES=s.v||{}}catch(e){}
+const persist=()=>{try{localStorage.setItem("unmai-real",JSON.stringify({l:[...LIKED],s:[...SAVED],n:[...SEEN],v:VOTES}))}catch(e){}};
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),1800)}
+const close=()=>{$("#layer").innerHTML=""};
+function sheet(html){
+  $("#layer").innerHTML=`<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}<button class="btn out" data-close>Close</button></div></div>`;
+  $("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim"||e.target.closest("[data-close]"))close()});
+}
+const wa=t=>`https://wa.me/?text=${encodeURIComponent(t)}`;
+const srcLink=(u,label="Read the source")=>`<a class="lnk" href="${u}" target="_blank" rel="noopener">${label} ↗</a>`;
+const I={
+ cmt:`<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>`,
+ heart:`<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`,
+ share:`<svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>`,
+ save:`<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`,
+ up:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>`
+};
+function updSaved(){const d=$("#savedDot");d.hidden=!SAVED.size;d.textContent=SAVED.size}
+const critLine=f=>{const c=crit(f);return `${c.pos} of ${c.n} positive`};
+
+/* ===== feed ===== */
+function shareText(p){
+  if(p.k==="review"){const f=F[p.f];return `${f.t}: ${critLine(f)} critics. Via Unmai.`}
+  if(p.k==="rumour"){const r=RUMS[p.r];return (r.st==="busted"?"BUSTED: ":r.st==="happened"?"CAME TRUE: ":"RUMOUR: ")+r.t+". Via Unmai."}
+  return p.h+". Via Unmai.";}
+function critMini(f){const c=crit(f),v=tier(c.score);return `<div class="sc2"><div><b style="color:${col(c.score)}">${c.pos}/${c.n}</b><small>Critics positive</small></div><div><b class="lock">Soon</b><small>Verified audience</small></div><span class="verdict v-${v[0]}">${v[1]}</span></div>`}
+function postBody(p,i){
+  if(p.k==="news") return `<div class="ptxt"><strong>${esc(p.h)}</strong>${esc(p.s)}</div><button class="media pic" data-open="${i}" aria-label="Open story">${art(F[p.f].p)}<span>${esc(F[p.f].t)}</span></button>`;
+  if(p.k==="review"){const f=F[p.f];return `<div class="ptxt">${esc(p.h)}</div><button class="card" data-film="${p.f}">${critMini(f)}<span class="ptxt" style="font-size:14.5px;color:var(--soft)">“${esc(f.rev[0][4])}” <span style="color:var(--muted)">— ${esc(f.rev[0][0])}</span></span><span class="cardlink">Read all ${f.rev.length} reviews ›</span></button>`}
+  if(p.k==="box"){const f=F[p.f];return `<div class="ptxt"><strong>${esc(p.h)}</strong>${esc(p.s)}</div><button class="card" data-tab="calendar"><span class="boxbig">${f.box.v}</span><span class="meta"><b>India net</b>· ${esc(f.box.note.toLowerCase())} · ${esc(f.box.src)}</span><span class="cardlink">See all box office ›</span></button>`}
+  if(p.k==="poll"){const v=VOTES[p.id];
+    return `<div class="ptxt"><strong>Poll</strong>${esc(p.h)}</div><div class="poll">${v?`<div class="pbar mine"><i style="width:100%"></i><span>You said ${v==="yes"?"Yes":"No"}</span><span>✓</span></div><span class="meta">Results show after Jailer 2's reviews are in on 15 Oct.</span>`:`<button data-vote="${p.id}:yes">Yes</button><button data-vote="${p.id}:no">No</button><span class="meta">Results show after the reviews are in.</span>`}</div>`}
+  if(p.k==="rumour"){const r=RUMS[p.r],n={rumour:1,buzz:2}[r.st],cls=r.st==="happened"?"done":r.st==="busted"?"bust":"";
+    return `<div class="ptxt">${esc(r.t)}</div>${r.st==="busted"?`<button class="media pic" data-rum="${p.r}" aria-label="Open rumour">${art(F[r.f].p)}<span>${esc(F[r.f].t)}</span><b class="stamp">Busted</b></button>`:""}
+     <button class="card" data-rum="${p.r}"><div class="steps ${cls}">${[1,2,3].map(x=>`<i class="${n&&x<=n?"on":""}"></i>`).join("")}</div><span class="who">Reported by <b>${esc(r.src)}</b> · ${esc(r.date)}</span><span class="cardlink">See the timeline ›</span></button>`}
+}
+function postHTML(p,i){
+  const r=p.k==="rumour"?RUMS[p.r]:null,fid=r?r.f:p.f,f=F[fid];
+  const who=p.k==="review"?"Reviews":p.k==="poll"?"Unmai poll":p.k==="box"?"Box office":r?"Rumour check":p.src;
+  const st=r?r.st:p.st,date=r?r.date:p.date,liked=LIKED.has(i),saved=SAVED.has(i),nc=(EXTRA[i]||[]).length;
+  return `<article class="post" id="post-${i}"><button class="av pic" data-film="${fid}" aria-label="${esc(f.t)}">${art(f.p)}<b>${ini(f.t)}</b></button>
+   <div class="pb"><div class="ph"><b>${esc(f.t)}</b><span class="src">${esc(who)} · ${esc(date)}</span>${st?tag(st):""}</div>
+   ${postBody(p,i)}
+   <div class="acts">
+    <button data-cmt="${i}" aria-label="Comments">${I.cmt}<span>${nc||""}</span></button>
+    <button data-like="${i}" class="${liked?"liked":""}" aria-label="Like">${I.heart}<span>${liked?1:""}</span></button>
+    <a href="${wa(shareText(p))}" target="_blank" rel="noopener" aria-label="Share on WhatsApp">${I.share}</a>
+    <button data-save="${i}" class="${saved?"saved":""}" aria-label="Save">${I.save}</button>
+   </div></div></article>`;
+}
+let ORDER=POSTS.map((_,i)=>i),NEWDONE=false;
+function liveBanner(){const f=F[LIVE.f],n=daysTo(LIVE.d);return `<button class="live-b" data-live="1"><span class="pulse"></span><span><b>${esc(f.t)} live thread · ${n>1?`in ${n} days`:n===1?"tomorrow":"today"}</b><span class="s">Opens 15 Oct with the first shows. Interval and end verdicts from people in theatres.</span></span><span class="go">Preview ›</span></button>`}
+function showNewPill(){const el=$("#newpill");if(!el||NEWDONE)return;el.innerHTML=`<button id="newbtn">${I.up}${NEW_POOL.length} new posts</button>`;
+  $("#newbtn").onclick=()=>{NEW_POOL.forEach(p=>{POSTS.push(p);ORDER.unshift(POSTS.length-1)});NEWDONE=true;show("feed")}}
+const swipeList=()=>ORDER.map(i=>[POSTS[i],i]).filter(([p])=>p.k==="news");
+function feed(){
+  const st=swipeList();
+  return `<div class="stories"><button class="story first" data-swipe="${st[0][1]}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span>Catch up</span></button>
+   ${st.map(([p,i])=>`<button class="story" data-swipe="${i}"><span class="ring ${SEEN.has(i)?"seen":""}"><span class="pic">${art(F[p.f].p)}</span></span><span>${esc(F[p.f].t)}</span></button>`).join("")}</div>`
+   +liveBanner()+`<div class="newpill" id="newpill"></div>`
+   +ORDER.map(i=>postHTML(POSTS[i],i)).join("")
+   +`<div class="end">That's everything from the last two weeks.<br>Every story links to its source. Box office figures are tracker estimates.</div>`;
+}
+
+/* ===== reviews ===== */
+const REVIEWED=Object.keys(F).filter(id=>F[id].rev).sort((a,b)=>crit(F[b]).score-crit(F[a]).score);
+function reviews(){
+  return `<p class="intro">For now this shows published critic reviews, summarised with links. Verified audience scores from scanned tickets start at launch.</p>`+
+   REVIEWED.map(id=>{const f=F[id],c=crit(f),v=tier(c.score);
+   return `<button class="film" data-film="${id}"><div class="pic">${art(f.p)}</div><div>
+    <h3>${esc(f.t)}</h3><div class="g">${esc(f.gen)} · ${esc(f.where)}</div>
+    <div class="scores"><span class="score"><b style="color:${col(c.score)}">${c.pos}/${c.n}</b><small>Critics positive</small></span>
+     <span class="score"><b class="lock">Soon</b><small>Audience</small></span>
+     <span class="verdict v-${v[0]}">${c.n<3?"Early: ":""}${v[1]}</span></div></div></button>`}).join("");
+}
+
+/* ===== rumours ===== */
+let rumFilter="all",MYTIPS=0;
+function rumours(){
+  const opts=[["all","All"],["open","Still open"],["happened","Came true"],["busted","Busted"]];
+  const list=RUMS.filter(r=>rumFilter==="all"||(rumFilter==="open"?["rumour","buzz"].includes(r.st):r.st===rumFilter));
+  const tally={};RUMS.forEach(r=>{const t=tally[r.out]=tally[r.out]||{y:0,b:0,o:0};r.st==="happened"?t.y++:r.st==="busted"?t.b++:t.o++});
+  return `<div class="tipcard"><b>Heard something?</b><p>Send a tip. Once it's checked, it goes up as a rumour credited to you. Get it right and you climb the tipster board.${MYTIPS?` You have ${MYTIPS} tip${MYTIPS>1?"s":""} waiting.`:""}</p><button class="btn" data-tip="1">Send a tip</button></div>
+   <div class="filters">${opts.map(([key,l])=>`<button data-rf="${key}" aria-pressed="${key===rumFilter}">${l}</button>`).join("")}</div>`+
+   (list.map(r=>{const i=RUMS.indexOf(r),n={rumour:1,buzz:2}[r.st],cls=r.st==="happened"?"done":r.st==="busted"?"bust":"";
+    return `<button class="rum" data-rum="${i}"><div class="meta">${tag(r.st)}<span>${esc(F[r.f].t)} · ${esc(r.date)}</span></div>
+     <h2>${esc(r.t)}</h2><div class="steps ${cls}">${[1,2,3].map(x=>`<i class="${n&&x<=n?"on":""}"></i>`).join("")}</div>
+     <div class="who">Reported by <b>${esc(r.src)}</b></div></button>`}).join("")||`<p class="intro">Nothing here right now.</p>`)+
+   `<h3 class="sec-h">Track record so far</h3><p class="intro" style="padding-top:2px">Counted from the rumours on this page. Once we launch, every outlet and tracker gets a running accuracy score.</p>`+
+   Object.entries(tally).sort((a,b)=>(b[1].y+b[1].b+b[1].o)-(a[1].y+a[1].b+a[1].o)).map(([h,t])=>`<div class="src-row"><b>${esc(h)}</b><span class="p" style="font-size:14px;color:var(--soft)">${t.y+t.b+t.o}</span><small>${t.y} came true · ${t.b} busted · ${t.o} still open</small></div>`).join("");
+}
+
+/* ===== calendar ===== */
+function calendar(){
+  const ups=Object.entries(F).filter(([,f])=>f.cal).sort((a,b)=>a[1].d.localeCompare(b[1].d));
+  let out="",cur="";
+  for(const [id,f] of ups){
+    const x=dd(f),m=f.grp||x.month,word=f.label&&!/^\d/.test(f.label);
+    if(m!==cur){out+=`<div class="mon">${m}</div>`;cur=m}
+    const t=f.ott?`<span class="tag t-ott">${esc(f.ott)}</span>`:f.conf?`<span class="tag t-conf">Confirmed</span>`:`<span class="tag t-tent">Tentative</span>`;
+    out+=`<button class="cal" data-film="${id}"><div class="day ${word?"word":""}">${word?`<b>${esc(f.label)}</b>`:`<b>${x.day}</b><small>${x.dow}</small>`}</div><div class="pic">${art(f.p)}</div>
+     <div style="min-width:0"><h3>${esc(f.t)}</h3><p>${esc(f.cast||f.gen)}</p></div>${t}</button>`;
+  }
+  const bo=Object.entries(F).filter(([,f])=>f.box).sort((a,b)=>b[1].box.n-a[1].box.n);
+  return `<h3 class="sec-h">Release dates</h3><p class="intro" style="padding-top:2px">Confirmed means the makers announced it. Tentative means reported but not official.</p>${out}
+   <h3 class="sec-h" style="margin-top:12px">Box office so far</h3><p class="intro" style="padding-top:2px">India net, tracker estimates. Films released in the last month.</p>
+   ${bo.map(([id,f],i)=>`<button class="bo" data-film="${id}"><span class="rk">${i+1}</span><div><h3>${esc(f.t)}</h3><p>${esc(f.box.note)} · ${esc(f.box.src)}</p></div><span class="amt">${f.box.v}</span></button>`).join("")}`;
+}
+
+/* ===== routing ===== */
+const TITLES={feed:"Unmai",reviews:"Reviews",rumours:"Rumours",calendar:"Calendar"};
+let tab="feed";
+function show(t,keep){
+  tab=t;
+  document.querySelectorAll(".tabbar button").forEach(b=>{if(b.dataset.tab===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  $("#ttl").textContent=TITLES[t];
+  $("#view").innerHTML=t==="feed"?feed():t==="reviews"?reviews():t==="rumours"?rumours():calendar();
+  if(!keep)window.scrollTo(0,0);
+}
+
+/* ===== sheets ===== */
+function openNews(i){const p=POSTS[i],f=F[p.f];
+  sheet(`<div class="meta">${tag(p.st)}<span>${esc(f.t)} · ${esc(p.date)}</span></div><h2>${esc(p.h)}</h2><p>${esc(p.s)}</p>
+   <div class="meta">Source: <b>${esc(p.src)}</b></div>${srcLink(p.url)}
+   <h4>How this story developed</h4><div class="tl">${p.tl.map(([d,t])=>`<div><b>${esc(d)}</b>${esc(t)}</div>`).join("")}</div>
+   ${f.cal||f.rev?`<button class="btn out" data-film="${p.f}">More on ${esc(f.t)}</button>`:""}
+   <a class="btn wa" href="${wa(shareText(p))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
+function openRum(i){const r=RUMS[i];
+  sheet(`<div class="meta">${tag(r.st)}<span>${esc(F[r.f].t)} · ${esc(r.date)}</span></div><h2>${esc(r.t)}</h2>
+   <div class="meta">Reported by <b>${esc(r.src)}</b></div>
+   <h4>Timeline</h4><div class="tl">${r.tl.map(([d,t])=>`<div><b>${esc(d)}</b>${esc(t)}</div>`).join("")}</div>
+   ${srcLink(r.url)}
+   <p style="font-size:13.5px;color:var(--muted)">${["rumour","buzz"].includes(r.st)?"Not confirmed. This updates when it's confirmed or denied.":"Settled."}</p>
+   <a class="btn wa" href="${wa(shareText({k:"rumour",r:i}))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
+function openFilm(id){const f=F[id];
+  const people=`<div class="meta">${f.dir?`Directed by <b>${esc(f.dir)}</b>`:""}${f.cast?`${f.dir?" · ":""}${esc(f.cast)}`:""}</div>`;
+  if(f.rev){
+    const c=crit(f),v=tier(c.score);
+    const list=f.rev.map(([o,cr,rt,vd,t,u])=>`<div class="rv"><div class="w">${esc(o)}<small>${[cr,rt].filter(Boolean).map(esc).join(" · ")}</small><span class="verdict v-${vd===1?"good":vd===0?"mid":"bad"}" style="margin-left:auto;font-size:10px;padding:3px 7px">${vd===1?"Positive":vd===0?"Mixed":"Negative"}</span></div><p>${esc(t)}</p>${srcLink(u,"Read the review")}</div>`).join("");
+    sheet(`<h2>${esc(f.t)}</h2><div class="meta">${esc(f.gen)} · ${esc(f.where)}</div>${people}
+     <div class="big2"><div><b style="color:${col(c.score)}">${c.pos}/${c.n}</b><span>Critics positive</span><small>${c.mix?c.mix+" mixed · ":""}${c.neg?c.neg+" negative · ":""}verdict: ${v[1]}</small></div>
+      <div><b class="lock" style="font-size:24px">Soon</b><span>Verified audience</span><small>Ticket-verified scores start at launch</small></div></div>
+     ${f.box?`<div class="cons"><small>Box office</small><b>${f.box.v}</b> India net, ${esc(f.box.note.toLowerCase())}. Estimate from ${esc(f.box.src)}. ${srcLink(f.box.url,"Source")}</div>`:""}
+     <h4>What critics said</h4><div>${list}</div>
+     <button class="btn out" data-scan="${id}">Watched it? Scan your ticket (demo)</button>
+     <a class="btn wa" href="${wa(`${f.t}: ${critLine(f)} critics. Via Unmai.`)}" target="_blank" rel="noopener">Share on WhatsApp</a>`);return;}
+  if(f.cal){
+    const n=f.d<"2099"?daysTo(f.d):null;
+    sheet(`<h2>${esc(f.t)}</h2><div class="meta">${esc(f.gen)}</div>${people}
+     <div class="big2"><div><b style="font-size:24px">${esc(dateText(f))}</b><span>${f.ott?"Streaming on "+esc(f.ott):f.conf?"Confirmed date":"Tentative"}</span><small>${f.conf?"Announced by the makers":"Reported, not official"}</small></div>
+      <div><b>${n!==null&&n>0?n:"–"}</b><span>${n!==null&&n>0?"Days to go":"Countdown"}</span><small>${n!==null&&n>0?"We'll post when bookings open":"Starts once there's a date"}</small></div></div>
+     ${f.note?`<div class="cons">${esc(f.note)}</div>`:""}
+     ${id===LIVE.f?`<button class="btn" data-live="1" style="background:#E0245E">Preview the live thread</button>`:""}
+     ${srcLink(f.url)}
+     <button class="btn ${id===LIVE.f?"out":""}" data-remind="${id}">Remind me on release day</button>`);return;}
+  const rel=RUMS.map((r,i)=>[r,i]).filter(([r])=>r.f===id);
+  sheet(`<h2>${esc(f.t)}</h2><div class="meta">${esc(f.gen||"")}</div>${people}${rel.length?`<h4>Rumours</h4>${rel.map(([r,i])=>`<button class="rum" style="padding:12px 0" data-rum="${i}"><div class="meta">${tag(r.st)}<span>${esc(r.date)}</span></div><h2 style="font-size:15.5px">${esc(r.t)}</h2></button>`).join("")}`:"<p>No dated updates yet.</p>"}`);
+}
+function openScan(id){const f=F[id];
+  sheet(`<h2>Review ${esc(f.t)}</h2><p>This is a demo of how verified reviews will work. Upload your BookMyShow, District or theatre ticket. Reviews open after your show ends, and each ticket works once.</p>
+   <label class="drop" for="tk"><input id="tk" type="file" accept="image/*,.pdf"><b>Choose ticket screenshot</b><br><span class="meta" style="justify-content:center">or try the sample below</span></label>
+   <button class="btn out" id="smp">Use a sample ticket</button><div id="vf"></div>`);
+  const run=()=>{$("#vf").innerHTML=`<p>Checking ticket…</p>`;setTimeout(()=>{
+    $("#vf").innerHTML=`<div style="display:flex;flex-direction:column;gap:4px"><span class="ok">✓ Film: ${esc(f.t)}</span><span class="ok">✓ Show has ended</span><span class="ok">✓ Ticket not used before</span></div>
+     <h4 style="margin-top:14px">Your rating</h4><div class="stars" style="margin-top:8px">${[1,2,3,4,5].map(n=>`<button data-r="${n}">${n}★</button>`).join("")}</div>
+     <textarea id="rt" placeholder="One line is enough" aria-label="Your review" style="margin-top:10px"></textarea>
+     <button class="btn" id="post" style="width:100%;margin-top:10px">Post review</button>`;
+    document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>document.querySelectorAll("[data-r]").forEach(x=>x.classList.toggle("on",+x.dataset.r<=+b.dataset.r)));
+    $("#post").onclick=()=>{close();toast("Demo only. Nothing was posted.")};},800)};
+  $("#tk").onchange=run;$("#smp").onclick=run;}
+let EXTRA={};
+function openComments(i){
+  const list=()=>(EXTRA[i]||[]).map(([n,t])=>`<div class="cmt"><span class="av">${n[0].toUpperCase()}</span><div><b>${esc(n)}</b><small>now</small><p>${esc(t)}</p></div></div>`).join("")||`<p>No comments yet. Start the conversation.</p>`;
+  sheet(`<h2>Comments</h2><div id="clist">${list()}</div>
+   <div class="cin"><input id="cin" placeholder="Add a comment" aria-label="Add a comment" autocomplete="off"><button id="csend">Post</button></div>`);
+  const send=()=>{const v=$("#cin").value.trim();if(!v)return;(EXTRA[i]=EXTRA[i]||[]).push(["you",v]);$("#clist").innerHTML=list();$("#cin").value="";const s=document.querySelector(`[data-cmt="${i}"] span`);if(s)s.textContent=EXTRA[i].length};
+  $("#csend").onclick=send;$("#cin").onkeydown=e=>{if(e.key==="Enter")send()};}
+function openSaved(){
+  const ids=[...SAVED].filter(i=>POSTS[i]);
+  sheet(`<h2>Saved</h2>${ids.length?ids.map(i=>{const p=POSTS[i],r=p.k==="rumour"?RUMS[p.r]:null;return `<button class="rum" style="padding:12px 0" data-goto="${i}"><div class="meta"><b>${esc(F[r?r.f:p.f].t)}</b></div><h2 style="font-size:15.5px">${esc(r?r.t:p.h)}</h2></button>`}).join(""):`<p>Tap the bookmark on any post to save it here.</p>`}`);}
+function openTip(){
+  const opts=Object.entries(F).map(([id,f])=>`<option value="${id}">${esc(f.t)}</option>`).join("");
+  sheet(`<h2>Send a tip</h2><p>Tell us what you heard. We check it against other sources, then post it as a rumour credited to you. (Demo: tips aren't sent anywhere yet.)</p>
+   <label class="fl" for="tfilm">Which film?</label><select id="tfilm">${opts}<option value="other">Another film</option></select>
+   <label class="fl" for="ttext">What did you hear?</label><textarea id="ttext" placeholder="For example: the trailer is coming on Friday"></textarea>
+   <label class="fl" for="tlink">Link (optional)</label><input id="tlink" type="url" placeholder="Paste a tweet, post or article link">
+   <button class="btn" id="tsend">Send tip</button><p id="terr" style="color:var(--bad);font-size:13.5px" hidden>Write what you heard before sending.</p>`);
+  $("#tsend").onclick=()=>{if(!$("#ttext").value.trim()){$("#terr").hidden=false;return}MYTIPS++;close();if(tab==="rumours")show("rumours",true);toast("Tip saved (demo)")};
+}
+function openSwipe(start){
+  const l=swipeList();let idx=Math.max(0,l.findIndex(([,i])=>i===start));
+  $("#layer").innerHTML=`<div class="sw" role="dialog" aria-label="60-second news"><button class="swx" id="sx" aria-label="Close">✕</button><span class="count" id="cnt"></span><div class="deck" id="deck">${l.map(([p])=>{const f=F[p.f];
+   return `<article class="slide"><div class="pic">${art(f.p)}<span>${esc(f.t)}</span></div><div class="bd">${tag(p.st)}<h2>${esc(p.h)}</h2><p>${esc(p.s)}</p><div class="meta"><b>${esc(p.src)}</b>· ${esc(p.date)}</div><div class="swhint">${I.up}Swipe up for the next story</div></div></article>`}).join("")}
+   <article class="slide" style="align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center"><h2>You're all caught up</h2><button class="btn" id="sd" style="padding-inline:28px">Back to feed</button></article></div></div>`;
+  const d=$("#deck");d.scrollTop=idx*d.clientHeight;
+  const upd=()=>{const n=Math.round(d.scrollTop/d.clientHeight);$("#cnt").textContent=`${Math.min(l.length,n+1)} / ${l.length}`;if(l[n]){SEEN.add(l[n][1]);persist()}};upd();d.addEventListener("scroll",upd);
+  const done=()=>{close();if(tab==="feed")show("feed",true)};$("#sx").onclick=done;$("#sd").onclick=done;
+}
+/* live thread: Jailer 2 hasn't released yet, so this shows the pre-release state */
+const LV={items:[]};
+function renderLive(){
+  const f=F[LIVE.f],n=daysTo(LIVE.d);
+  const empty=lab=>`<div class="vbar"></div><div class="vleg"><span>${lab}</span></div>`;
+  $("#lvbody").innerHTML=`<div class="lv-sec"><div class="vhead"><h3>Interval verdict</h3><small>From people checked in at theatres</small></div>${empty("Opens at the first interval on 15 Oct")}
+     <div class="vhead" style="margin-top:6px"><h3>End verdict</h3><small>From people whose show has ended</small></div>${empty("Opens when the first shows end")}</div>
+   <div class="lv-sec"><div class="ci"><b>How it works on release day</b>
+     <p>1. Check in before your show with one tap (location) or your e-ticket screenshot.</p>
+     <p>2. At the interval, tap Semma, Okay or Mokka. Same again at the end.</p>
+     <p>3. Only checked-in votes count. Anyone can read and chat.</p>
+     <button class="btn" data-remind="${LIVE.f}">Remind me when it opens</button></div></div>
+   <div class="lv-sec" style="gap:8px"><h3>Pre-release chat</h3><div class="cin"><input id="lvin" placeholder="Hype, predictions, no spoilers" aria-label="Post in the chat" autocomplete="off"><button id="lvsend">Post</button></div></div>
+   <div id="lvlist">${LV.items.map(t=>`<div class="rx"><span class="av">Y</span><div><div class="h"><b>You</b><small>now</small></div><p>${esc(t)}</p></div></div>`).join("")||`<p class="intro">No posts yet. Be the first.</p>`}</div>`;
+  $("#lvcount").textContent=n>0?`Opens 15 Oct · in ${n} day${n>1?"s":""}`:"Opens today";
+  const send=()=>{const v=$("#lvin").value.trim();if(!v)return;LV.items.unshift(v);renderLive()};
+  $("#lvsend").onclick=send;$("#lvin").onkeydown=e=>{if(e.key==="Enter")send()};
+}
+function openLive(){
+  $("#layer").innerHTML=`<div class="lv" role="dialog" aria-label="Live thread"><div class="lv-in">
+   <div class="lv-top"><button class="ibtn" id="lvx" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="t"><b>${esc(F[LIVE.f].t)}</b><span class="tag t-tent">Upcoming</span><small id="lvcount"></small></div></div>
+   <div id="lvbody"></div></div></div>`;
+  $("#lvx").onclick=close;renderLive();
+}
+
+/* ===== events ===== */
+document.addEventListener("click",e=>{const t=e.target;
+  const tb=t.closest("[data-tab]");if(tb){close();show(tb.dataset.tab);return}
+  const lv=t.closest("[data-live]");if(lv){close();openLive();return}
+  const tp=t.closest("[data-tip]");if(tp){openTip();return}
+  const lk=t.closest("[data-like]");if(lk){const i=+lk.dataset.like;LIKED.has(i)?LIKED.delete(i):LIKED.add(i);persist();lk.classList.toggle("liked",LIKED.has(i));lk.querySelector("span").textContent=LIKED.has(i)?1:"";return}
+  const sv=t.closest("[data-save]");if(sv){const i=+sv.dataset.save;SAVED.has(i)?SAVED.delete(i):SAVED.add(i);persist();sv.classList.toggle("saved",SAVED.has(i));updSaved();toast(SAVED.has(i)?"Saved":"Removed from saved");return}
+  const cm=t.closest("[data-cmt]");if(cm){openComments(+cm.dataset.cmt);return}
+  const vt=t.closest("[data-vote]");if(vt){const [id,a]=vt.dataset.vote.split(":");VOTES[id]=a;persist();const i=POSTS.findIndex(p=>p.id===id);$("#post-"+i).outerHTML=postHTML(POSTS[i],i);toast("Vote counted");return}
+  const rf=t.closest("[data-rf]");if(rf){rumFilter=rf.dataset.rf;show("rumours",true);return}
+  const rm=t.closest("[data-remind]");if(rm){toast("Reminders come with the full launch");return}
+  const sc=t.closest("[data-scan]");if(sc){openScan(sc.dataset.scan);return}
+  const sw=t.closest("[data-swipe]");if(sw){openSwipe(+sw.dataset.swipe);return}
+  const gt=t.closest("[data-goto]");if(gt){close();show("feed");setTimeout(()=>$("#post-"+gt.dataset.goto)?.scrollIntoView({block:"center"}),50);return}
+  const op=t.closest("[data-open]");if(op){openNews(+op.dataset.open);return}
+  const r=t.closest("[data-rum]");if(r){openRum(+r.dataset.rum);return}
+  const f=t.closest("[data-film]");if(f){openFilm(f.dataset.film);return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+$("#savedBtn").onclick=openSaved;
+updSaved();
+show("feed");
+setTimeout(()=>{if(tab==="feed")showNewPill()},6000);
+</script>
+
+</body>
+</html>
