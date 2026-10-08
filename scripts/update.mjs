@@ -161,7 +161,9 @@ export function articleText(html) {
 }
 
 const SYSTEM = `You write posts for Unmai, a Tamil cinema news app read by fans on their phones.
-From the article text, return JSON with four fields:
+From the article text, return JSON with these fields:
+"points": 2 to 3 short bullet points that carry the juice, each under 16 words, each a complete fact (names, numbers, dates). The first point is the headline fact; don't repeat the hook word for word. No filler.
+"quote": the single most telling direct quote from a named person in the article, under 22 words, as {"text": "...", "by": "Name, role"}; or null if nobody is quoted.
 "hook": a short, punchy headline in your own words (max 12 words) that makes a fan want to read on. It must be accurate: no exaggeration, no question bait, no claims that aren't in the text, no ALL CAPS, no emoji.
 "summary": the whole story told on its own so the reader never needs the original article: 3 to 5 short sentences, 60 to 90 words. Lead with the single most interesting fact. Then the juice: names, numbers, dates, what was actually said. If someone is quoted, include their most telling line as a short direct quote (under 20 words) with who said it. Skip filler, background everyone knows, and promotional fluff. Never end with a sentence about fans being excited, the film being much awaited, or what fans can expect: stop when the facts run out. Write like a sharp entertainment reporter, in plain English and in your own words; apart from that one quote, never copy sentences from the article. If something is unconfirmed (sources, reportedly, buzz), say it is reported, not confirmed.
 "cat": one of "box" (box office), "release" (release dates, trailers, teasers, songs, first looks, censor), "casting" (new films, who is in or directing what, shoots), "ott" (streaming), "rumour" (unconfirmed reports), "celeb" (stars' public lives: appearances, social posts, weddings or engagements they announced, birthdays, awards, fashion, statements), "other".
@@ -212,8 +214,10 @@ async function summarise(title, source, text) {
         const out = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("").trim();
         let o; try { o = JSON.parse(out.replace(/^```(json)?|```$/g, "")); } catch { DIAG.ai.push(`bad json ${model}`); return "SKIP"; }
         if (!o || !o.summary || !(+o.score > 0)) return "SKIP";
+        const tidyQ = q => q && q.text && q.by ? { text: String(q.text).replace(/^["“”']+|["“”']+$/g, "").replace(/\s+/g, " ").trim().slice(0, 200), by: String(q.by).trim().slice(0, 60) } : null;
         const tidy = x => String(x || "").replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim();
-        return { hook: tidy(o.hook).slice(0, 120), sum: tidy(o.summary).slice(0, 500), score: Math.max(1, Math.min(10, Math.round(+o.score))), ...(o.cat ? { cat: String(o.cat).toLowerCase().slice(0, 10) } : {}) };
+        return { hook: tidy(o.hook).slice(0, 120), sum: tidy(o.summary).slice(0, 500), points: (Array.isArray(o.points) ? o.points : []).map(x => String(x).replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 3), quote: tidyQ(o.quote),
+          score: Math.max(1, Math.min(10, Math.round(+o.score))), ...(o.cat ? { cat: String(o.cat).toLowerCase().slice(0, 10) } : {}) };
       } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); break; }
     }
   }
@@ -224,7 +228,7 @@ async function addSummaries(items, tried) {
   let done = 0;
   for (const it of items) {
     if (done >= SUM_PER_RUN || modelBlocked || DIAG.attempts >= 16) break;
-    if (it.v === 2 || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
+    if (it.v === 3 || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
     DIAG.attempts++;
     try {
       const real = it.realUrl || (await decodeGoogleNews(it.url));
@@ -238,13 +242,13 @@ async function addSummaries(items, tried) {
       if (text.length < 200) { DIAG.short++; tried[it.id] = NOW; continue; }
       const res2 = await summarise(it.title, it.source, text);
       if (res2 === "SKIP") { DIAG.skip++; it.score = 0; tried[it.id] = NOW; }
-      else if (res2) { Object.assign(it, res2, { v: 2 }); done++; DIAG.ok++; }
+      else if (res2) { Object.assign(it, res2, { v: 3 }); done++; DIAG.ok++; }
       // sum === null means the AI call failed: don't mark as tried, retry next run
     } catch (e) { DIAG.fetchErr++; tried[it.id] = NOW; console.warn("summary failed:", it.title.slice(0, 50), e.message); }
   }
   let ph = 0;
   for (const it of items) {
-    if (ph >= 25 || it.photo !== undefined || !it.v || !it.realUrl) continue;
+    if (ph >= 25 || it.photo !== undefined || !it.v || !it.realUrl) continue; // stories written before photos existed
     ph++;
     try { const r = await fetch(it.realUrl, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" }, redirect: "follow" }); it.photo = r.ok ? articlePhoto(await r.text()) : ""; }
     catch { it.photo = ""; }
@@ -323,7 +327,7 @@ async function main() {
       id: it.id, title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
       tag: it.tag || tagOf(it.title), film: it.film || matchFilm(it.title),
       ...(it.realUrl ? { realUrl: it.realUrl } : {}), ...(it.sum ? { sum: it.sum } : {}),
-      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.cat ? { cat: it.cat } : {}), ...(it.photo !== undefined ? { photo: it.photo } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
+      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.cat ? { cat: it.cat } : {}), ...(it.points && it.points.length ? { points: it.points } : {}), ...(it.quote ? { quote: it.quote } : {}), ...(it.photo !== undefined ? { photo: it.photo } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
       ...(it.also && it.also.length ? { also: it.also.slice(0, 8) } : {}),
     });
     if (kept.length >= MAX_ITEMS) break;

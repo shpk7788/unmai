@@ -22,7 +22,7 @@
 <meta property="og:description" content="Tamil cinema news, critic reviews, rumour checks and release dates.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Libre+Franklin:wght@400;500;600;700;800&family=Hind+Madurai:wght@600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,500&family=Hind+Madurai:wght@600&display=swap">
 <script>(function(){try{var s=JSON.parse(localStorage.getItem("unmai-set")||"{}"),t=s.theme||"system",d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";if(s.size)document.documentElement.dataset.size=s.size}catch(e){}})()</script>
 <style>
 :root{padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}img{max-width:100%}
@@ -337,6 +337,27 @@ button:active{opacity:.75}
 .cats::-webkit-scrollbar{display:none}
 .cats button{flex:none;padding:13px 10px 11px;font-size:14.5px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
 .cats button[aria-selected="true"]{color:var(--ink);font-weight:800;border-bottom-color:var(--pop)}
+/* ---- warm theme ---- */
+:root{--bg:#FAF6F0;--card:#FFFFFF;--ink:#231C16;--soft:#4E443B;--muted:#8A7E72;--line:#EDE5DA;--tint:#F4EDE3;--sheet:#FFFDFB;--glass:rgba(250,246,240,.9);--pop-soft:#FFEEDF;
+  --ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;--display:var(--ui);--serif:"Fraunces",Georgia,serif;--shadow:0 1px 2px rgba(70,45,20,.06),0 6px 18px rgba(70,45,20,.06)}
+:root[data-theme="dark"]{--bg:#15120F;--card:#1E1A16;--ink:#F2EBE3;--soft:#CFC4B8;--muted:#9A8E82;--line:#2E2822;--tint:#26211C;--sheet:#1E1A16;--glass:rgba(21,18,15,.9);--pop-soft:#33200F;--shadow:0 1px 2px rgba(0,0,0,.3)}
+.app{border:0}
+.top{border-bottom-color:transparent}
+.post.card{background:var(--card);margin:12px 12px 0;border-radius:20px;border:0;box-shadow:var(--shadow);padding:14px 14px 4px}
+.stories,.trend{border-bottom:0}
+.trend button{background:var(--card);box-shadow:var(--shadow)}
+.trend button[aria-pressed="true"]{background:var(--ink)}
+.cats{border-bottom:1px solid var(--line)}
+.pts{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pts li{position:relative;padding-left:16px;font-size:15px;line-height:1.45;color:var(--soft)}
+.pts li::before{content:"";position:absolute;left:2px;top:.6em;width:6px;height:6px;border-radius:50%;background:var(--pop)}
+.pq{margin:10px 0 2px;padding:10px 14px;border-radius:14px;background:var(--pop-soft);border-left:3px solid var(--pop)}
+.pq p{margin:0;font-family:var(--serif);font-style:italic;font-weight:500;font-size:16.5px;line-height:1.4;color:var(--ink)}
+.pq cite{display:block;margin-top:4px;font-style:normal;font-size:12.5px;font-weight:700;color:var(--muted)}
+.sheetstory .pts li{font-size:16px}.sheetstory .pq p{font-size:18px}
+.post .hook{font-size:17px;line-height:1.3;letter-spacing:-.01em}
+.end{padding-top:32px}
+.post.card{padding-bottom:0}.post.card .acts{padding-bottom:2px}.post.card .srcchip:empty{display:none}
 /* tweet layout: avatar column on the left, everything else beside it */
 .post{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:11px;row-gap:6px;padding:12px 16px 4px}
 .post>*{grid-column:2;min-width:0}
@@ -591,6 +612,15 @@ function critMini(f){const c=crit(f),v=tier(c.score);return `<div class="sc2"><d
 function media(fid,attr,extra="",seed){return `<button class="media pic" ${attr} aria-label="Open">${img(fid,seed?"shot":"backdrop",seed)}${seed?"":`<span class="ov">${esc(F[fid].t)}</span>`}${extra}</button>`}
 /* Don't show the exact same photo twice within a few posts: if the film has no fresh still, the post goes text-only. */
 let RECENT=[];
+/* Story body: quick points + pulled quote. Older stories only have a paragraph, so we split it. */
+function storyParts(w){
+  let pts=(w.points||[]).slice(),q=w.quote||null;const sum=clean(w.sum||"");
+  if(!pts.length&&sum){let ss=sum.split(/(?<=[.!?]["”’]?)\s+(?=[A-Z“"‘'])/);ss=ss.map(x=>x.trim()).filter(Boolean);
+    if(!q){const i=ss.findIndex(x=>/["“][^"”]{12,}["”]/.test(x));if(i>=0){const m=ss[i].match(/["“]([^"”]{12,})["”]/);const by=(ss[i].replace(m[0],"").match(/\b(?:said|says|added|stated|wrote|told)\s+([^,.]+)|([A-Z][\w.' ]+?)\s+(?:said|says|added|stated|wrote)/)||[]);q={text:m[1].replace(/[,.]$/,""),by:(by[1]||by[2]||"").trim()};ss.splice(i,1)}}
+    pts=ss.filter(x=>/[.!?"”’)]$/.test(x)).slice(0,3)}
+  return {pts,q}}
+function storyHTML(w,full){const {pts,q}=storyParts(w);
+  return `${pts.length?`<ul class="pts">${pts.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}${q&&q.text?`<blockquote class="pq"><p>“${esc(q.text)}”</p>${q.by?`<cite>${esc(q.by)}</cite>`:""}</blockquote>`:""}`}
 const photoTag=(u,alt="")=>`<img src="${esc(u)}" alt="${esc(alt)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('.media')?this.closest('.media').remove():this.remove()">`;
 function shotFor(fid,seed){const u=pickShot(fid,seed);if(!u)return null;
   const g=galleryOf(fid);let k=hsh(seed);for(let i=0;i<g.length;i++){const c=g[(k+i)%g.length];if(!RECENT.includes(c)){RECENT=[c,...RECENT].slice(0,8);return (k+i)%g.length}}return null}
@@ -613,7 +643,7 @@ function postHTML(it){
   if(it.w){const w=it.w,f=w.film&&F[w.film];const [bg,fg]=candy(w.source);
     return `<article class="card post webpost" id="post-${it.key}"><div class="ph">${f?`<button class="av pic" data-film="${w.film}" aria-label="${esc(f.t)}">${img(w.film)}</button>`:`<span class="av" style="background:${bg};color:${fg}">${esc(ini(w.source))}</span>`}
       <div class="nm"><b>${esc(f?f.t:w.source)}</b><small>${f?"via "+esc(w.source)+" · ":""}${ago(w.ts)}</small></div>${w.tag==="news"?"":tag(w.tag)}</div>
-      <button class="ptxt" data-web="${it.key}" style="text-align:left"><span class="hook">${esc(w.hook||w.title)}</span>${w.sum?esc(w.sum):""}</button>
+      <button class="ptxt" data-web="${it.key}" style="text-align:left"><span class="hook">${esc(w.hook||w.title)}</span>${storyHTML(w)}</button>
       ${(()=>{if(w.photo)return `<button class="media pic" data-web="${it.key}" aria-label="Open">${photoTag(w.photo,w.hook||w.title)}</button>`;if(!f||!hasImg(w.film))return"";const n=shotFor(w.film,w.id);return n===null?"":`<button class="media pic" data-web="${it.key}" aria-label="Open">${img(w.film,"shot",String(n)+"#")}</button>`})()}
       ${(w.also||[]).length?`<span class="srcchip">${alsoHTML(w)}</span>`:""}
       ${actions(it)}</article>`}
@@ -712,7 +742,7 @@ function openNews(i){const p=POSTS[i],f=F[p.f];
    <a class="btn wa" href="${wa(shareText({c:i}))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
 function openWeb(key){const it=ITEM(key);if(!it.w)return;const w=it.w,f=w.film&&F[w.film];
   sheet(`${w.photo?`<span class="hero pic">${photoTag(w.photo)}</span>`:f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"shot",w.id)}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
-   ${w.sum?`<p style="font-size:16.5px;line-height:1.6;color:var(--ink)">${esc(clean(w.sum))}</p>${w.tag==="rumour"?`<p style="font-size:13px;color:var(--muted)">This is a report, not an official announcement.</p>`:""}`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
+   ${w.sum?`<div class="sheetstory">${storyHTML(w,1)}</div>${w.tag==="rumour"?`<p style="font-size:13px;color:var(--muted)">This is a report, not an official announcement.</p>`:""}`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
    ${(w.also||[]).length?`<h4>Also reported by</h4><div class="meta" style="flex-wrap:wrap;gap:6px 14px">${w.also.map(a=>`<a href="${esc(a.url)}" target="_blank" rel="noopener" style="display:inline-flex;gap:6px;align-items:center">${fav(a.srcUrl)}${esc(a.source)}</a>`).join("")}</div>`:""}
    <p class="credit">${fav(w.srcUrl)}${w.photo?"Story and photo: ":"Reported by "} <a href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">${esc(w.source)}</a></p>
    ${f?`<button class="btn out" data-film="${w.film}">More on ${esc(f.t)}</button>`:""}
