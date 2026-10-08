@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  models: read
 
 concurrency:
   group: update-news
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +31,7 @@ jobs:
       - name: Fetch news and posters
         env:
           TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/update.mjs
       - name: Commit if changed
         run: |

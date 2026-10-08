@@ -115,6 +115,84 @@ async function fetchNews() {
   return all;
 }
 
+/* ---------- summaries ----------
+   For each new headline: find the real article URL behind the Google News link, read the article,
+   and ask a small AI model (free via GitHub Models, using the workflow's own token) for a short
+   summary in our own words. Only the summary and the link are stored, never the article text. */
+const GH_TOKEN = process.env.GITHUB_TOKEN || "";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+const SUM_PER_RUN = 4;
+
+export async function decodeGoogleNews(url) {
+  const m = url.match(/news\.google\.com\/(?:rss\/)?articles\/([^?]+)/);
+  if (!m) return url;
+  const id = m[1];
+  const page = await (await fetch(`https://news.google.com/articles/${id}`, { headers: { "User-Agent": UA } })).text();
+  const sg = (page.match(/data-n-a-sg="([^"]+)"/) || [])[1], ts = (page.match(/data-n-a-ts="([^"]+)"/) || [])[1];
+  if (!sg || !ts) return null;
+  const inner = JSON.stringify(["garturlreq", [["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], id, +ts, sg]);
+  const body = "f.req=" + encodeURIComponent(JSON.stringify([[["Fbv4je", inner, null, "generic"]]]));
+  const r = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8", "User-Agent": UA }, body });
+  const txt = await r.text();
+  const hit = txt.match(/garturlres\\",\\"(.*?)\\"/);
+  return hit ? JSON.parse(`"${hit[1].replace(/\\\\/g, "\\")}"`) : null;
+}
+
+export function articleText(html) {
+  const og = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)/i) || [])[1] || "";
+  const body = html.replace(/<(script|style|noscript|nav|header|footer|aside|form)[\s\S]*?<\/\1>/gi, " ");
+  const paras = [...body.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map(x => decode(x[1])).filter(t => t.length > 60);
+  return decode(og) + "\n" + paras.join("\n").slice(0, 6000);
+}
+
+const SYSTEM = `You write short news summaries for Unmai, a Tamil cinema news website.
+Write 2 to 4 plain sentences, at most 70 words, in your own words, using only facts in the article text.
+Never copy sentences from the article. Never add facts that are not in the text.
+If something is unconfirmed (sources, reportedly, buzz, likely), say it is reported, not confirmed.
+No hype, no emoji, and don't repeat the headline word for word.
+If the text is empty, is not about the headline, or is not about Tamil cinema, reply with exactly: SKIP`;
+
+let modelBlocked = false;
+async function summarise(title, source, text) {
+  if (!GH_TOKEN || modelBlocked) return null;
+  const messages = [{ role: "system", content: SYSTEM }, { role: "user", content: `Headline: ${title}\nPublisher: ${source}\n\nArticle text:\n${text}` }];
+  const tries = [
+    ["https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini"],
+    ["https://models.inference.ai.azure.com/chat/completions", "gpt-4o-mini"],
+  ];
+  for (const [url, model] of tries) {
+    try {
+      const r = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${GH_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, messages, max_tokens: 220, temperature: 0.3 }) });
+      if (r.status === 429) { modelBlocked = true; console.warn("AI rate limit reached for now"); return null; }
+      if (!r.ok) { console.warn("AI call failed", r.status, url); continue; }
+      const out = (await r.json()).choices?.[0]?.message?.content?.trim();
+      if (!out || /^SKIP/i.test(out)) return "SKIP";
+      return out.replace(/\s+/g, " ").slice(0, 600);
+    } catch (e) { console.warn("AI error", e.message); }
+  }
+  return null;
+}
+
+async function addSummaries(items, tried) {
+  let done = 0;
+  for (const it of items) {
+    if (done >= SUM_PER_RUN || modelBlocked) break;
+    if (it.sum || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
+    tried[it.id] = NOW;
+    try {
+      const real = it.realUrl || (await decodeGoogleNews(it.url));
+      if (!real) continue;
+      it.realUrl = real;
+      const html = await (await fetch(real, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" } })).text();
+      const text = articleText(html);
+      if (text.length < 200) continue;
+      const sum = await summarise(it.title, it.source, text);
+      if (sum && sum !== "SKIP") { it.sum = sum; done++; }
+    } catch (e) { console.warn("summary failed:", it.title.slice(0, 50), e.message); }
+  }
+  console.log(`Added ${done} summaries.`);
+}
+
 async function tmdb(path) {
   const r = await get(`https://api.themoviedb.org/3${path}`, { Authorization: `Bearer ${TOKEN}`, accept: "application/json" });
   return r.json();
@@ -162,16 +240,21 @@ async function main() {
       id: it.id || Buffer.from(norm(it.title)).toString("base64url").slice(0, 16),
       title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
       tag: it.tag || tagOf(it.title), film,
+      ...(it.realUrl ? { realUrl: it.realUrl } : {}), ...(it.sum ? { sum: it.sum } : {}),
     });
     if (kept.length >= MAX_ITEMS) break;
   }
 
   const posters = await fetchPosters(prev);
-  const sameItems = JSON.stringify((prev.items || []).map(i => i.id)) === JSON.stringify(kept.map(i => i.id));
+  const sumTried = prev.sumTried || {};
+  await addSummaries(kept, sumTried);
+  for (const k of Object.keys(sumTried)) if (NOW - sumTried[k] > 3 * 864e5) delete sumTried[k];
+  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || ""]));
+  const sameItems = sig(prev.items) === sig(kept);
   const samePosters = JSON.stringify(prev.posters || {}) === JSON.stringify(posters);
   if (sameItems && samePosters) { console.log("No changes."); return; }
 
-  const out = { updated: NOW, items: kept, posters, postersTried: prev.postersTried || {} };
+  const out = { updated: NOW, items: kept, posters, postersTried: prev.postersTried || {}, sumTried };
   writeFileSync(OUT, JSON.stringify(out));
   console.log(`Wrote ${kept.length} items (${fresh.length} fetched this run), ${Object.keys(posters).length} films with images.`);
 }
