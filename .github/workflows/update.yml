@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  models: read
 
 concurrency:
   group: update-news
@@ -31,7 +30,7 @@ jobs:
       - name: Fetch news and posters
         env:
           TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/update.mjs
       - name: Commit if changed
         run: |

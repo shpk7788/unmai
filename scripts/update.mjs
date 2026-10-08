@@ -117,9 +117,8 @@ async function fetchNews() {
 
 /* ---------- summaries ----------
    For each new headline: find the real article URL behind the Google News link, read the article,
-   and ask a small AI model (free via GitHub Models, using the workflow's own token) for a short
-   summary in our own words. Only the summary and the link are stored, never the article text. */
-const GH_TOKEN = process.env.GITHUB_TOKEN || "";
+   and ask a small AI model for a short
+   summary in our own words (free Gemini API). Only the summary and the link are stored, never the article text. */
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 const SUM_PER_RUN = 4;
 
@@ -154,24 +153,34 @@ If the text is empty, is not about the headline, or is not about Tamil cinema, r
 
 let modelBlocked = false;
 const DIAG = { attempts: 0, ok: 0, noUrl: 0, fetchErr: 0, short: 0, skip: 0, ai: [] };
+const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+let geminiModel = 0;
+
+// Free Gemini API (Google AI Studio key saved as the GEMINI_API_KEY secret).
 async function summarise(title, source, text) {
-  if (!GH_TOKEN || modelBlocked) return null;
-  const messages = [{ role: "system", content: SYSTEM }, { role: "user", content: `Headline: ${title}\nPublisher: ${source}\n\nArticle text:\n${text}` }];
-  const tries = [
-    ["https://models.github.ai/inference/chat/completions", "openai/gpt-4.1-mini"],
-    ["https://models.inference.ai.azure.com/chat/completions", "gpt-4o-mini"],
-  ];
-  for (const [url, model] of tries) {
+  if (!GEMINI_KEY) { DIAG.ai.push("no GEMINI_API_KEY secret yet"); modelBlocked = true; return null; }
+  if (modelBlocked) return null;
+  while (geminiModel < GEMINI_MODELS.length) {
+    const model = GEMINI_MODELS[geminiModel];
+    const body = {
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: "user", parts: [{ text: `Headline: ${title}\nPublisher: ${source}\n\nArticle text:\n${text}` }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 400, ...(model.startsWith("gemini-2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+    };
     try {
-      const r = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${GH_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, messages, max_tokens: 220, temperature: 0.3 }) });
-      if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); console.warn("AI rate limit reached for now"); return null; }
-      if (!r.ok) { const t = (await r.text()).slice(0, 160); DIAG.ai.push(`${r.status} ${model}: ${t}`); console.warn("AI call failed", r.status, url, t); continue; }
-      const out = (await r.json()).choices?.[0]?.message?.content?.trim();
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY }, body: JSON.stringify(body),
+      });
+      if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); return null; }
+      if (!r.ok) { DIAG.ai.push(`${r.status} ${model}: ${(await r.text()).slice(0, 140)}`); geminiModel++; continue; }
+      const j = await r.json();
+      const out = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
       if (!out || /^SKIP/i.test(out)) return "SKIP";
       return out.replace(/\s+/g, " ").slice(0, 600);
-    } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); console.warn("AI error", e.message); }
+    } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); geminiModel++; }
   }
-  modelBlocked = true; // both endpoints failed: stop trying this run
+  modelBlocked = true;
   return null;
 }
 
