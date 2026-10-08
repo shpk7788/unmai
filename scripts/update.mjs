@@ -153,6 +153,47 @@ export function articlePhoto(html) {
   return u;
 }
 
+// Videos and posts embedded in the article: the trailer or song on YouTube, and the official
+// announcement post (from the star, director or studio) on X/Twitter.
+export function articleEmbeds(html) {
+  const yt = [...new Set([...html.matchAll(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/g)].map(m => m[1]))].slice(0, 4);
+  const tw = [...new Set([...html.matchAll(/(?:twitter|x)\.com\/([A-Za-z0-9_]{1,15})\/status(?:es)?\/(\d{8,20})/g)]
+    .filter(m => !/^(share|intent|i|home|search)$/i.test(m[1])).map(m => `https://twitter.com/${m[1]}/status/${m[2]}`))].slice(0, 4);
+  return { yt, tw };
+}
+const stripTags = h => decode(String(h).replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+const keyWords = t => new Set(String(t).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(w => w.length > 3));
+async function enrichMedia(it, page) {
+  const { yt, tw } = articleEmbeds(page);
+  const ctx = keyWords(`${it.title} ${it.hook || ""} ${(FILMS.find(f => f.id === it.film) || {}).title || ""}`);
+  const vids = [];
+  for (const id of yt) {
+    if (vids.length >= 1) break;
+    try {
+      const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent("https://www.youtube.com/watch?v=" + id)}&format=json`);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const shared = [...keyWords(j.title)].filter(w => ctx.has(w)).length;
+      if (shared >= 1 || /trailer|teaser|glimpse|song|lyric|promo|first look|single/i.test(j.title) && shared >= 1) vids.push({ id, title: stripTags(j.title).slice(0, 140), ch: String(j.author_name || "").slice(0, 60) });
+    } catch {}
+  }
+  const posts = [];
+  for (const url of tw) {
+    if (posts.length >= 2) break;
+    try {
+      const r = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=1&dnt=true`);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const body = (String(j.html).match(/<p[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
+      const text = stripTags(body.replace(/<a[^>]*>(pic\.twitter\.com|https?:\/\/t\.co)[^<]*<\/a>/gi, "")).slice(0, 400);
+      const date = stripTags((String(j.html).match(/<a[^>]*>([A-Z][a-z]+ \d{1,2}, \d{4})<\/a>\s*<\/blockquote>/) || [])[1] || "");
+      const handle = (url.match(/twitter\.com\/([^/]+)/) || [])[1];
+      if (text) posts.push({ url, by: String(j.author_name || handle).slice(0, 60), handle, text, date });
+    } catch {}
+  }
+  it.videos = vids; it.posts = posts;
+}
+
 export function articleText(html) {
   const og = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)/i) || [])[1] || "";
   const body = html.replace(/<(script|style|noscript|nav|header|footer|aside|form)[\s\S]*?<\/\1>/gi, " ");
@@ -240,6 +281,7 @@ async function addSummaries(items, tried) {
       if (!res.ok) { DIAG.fetchErr++; tried[it.id] = NOW; continue; }
       const page = await res.text();
       it.photo = articlePhoto(page);
+      await enrichMedia(it, page);
       const text = articleText(page);
       if (text.length < 200) { DIAG.short++; tried[it.id] = NOW; continue; }
       const res2 = await summarise(it.title, it.source, text);
@@ -250,10 +292,11 @@ async function addSummaries(items, tried) {
   }
   let ph = 0;
   for (const it of items) {
-    if (ph >= 25 || it.photo !== undefined || !it.v || !it.realUrl) continue; // stories written before photos existed
+    if (ph >= 30 || (it.photo !== undefined && it.videos) || !it.v || !it.realUrl) continue; // stories written before photos/videos existed
     ph++;
-    try { const r = await fetch(it.realUrl, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" }, redirect: "follow" }); it.photo = r.ok ? articlePhoto(await r.text()) : ""; }
-    catch { it.photo = ""; }
+    try { const r = await fetch(it.realUrl, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" }, redirect: "follow" });
+      const page = r.ok ? await r.text() : ""; it.photo = articlePhoto(page); await enrichMedia(it, page); }
+    catch { it.photo = ""; it.videos = []; it.posts = []; }
   }
   DIAG.photos = ph;
   console.log(`Added ${done} summaries.`, JSON.stringify(DIAG));
@@ -329,7 +372,7 @@ async function main() {
       id: it.id, title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
       tag: it.tag || tagOf(it.title), film: it.film || matchFilm(it.title),
       ...(it.realUrl ? { realUrl: it.realUrl } : {}), ...(it.sum ? { sum: it.sum } : {}),
-      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.cat ? { cat: it.cat } : {}), ...(it.points && it.points.length ? { points: it.points } : {}), ...(it.quote ? { quote: it.quote } : {}), ...(it.photo !== undefined ? { photo: it.photo } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
+      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.cat ? { cat: it.cat } : {}), ...(it.points && it.points.length ? { points: it.points } : {}), ...(it.quote ? { quote: it.quote } : {}), ...(it.photo !== undefined ? { photo: it.photo } : {}), ...(it.videos ? { videos: it.videos } : {}), ...(it.posts ? { posts: it.posts } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
       ...(it.also && it.also.length ? { also: it.also.slice(0, 8) } : {}),
     });
     if (kept.length >= MAX_ITEMS) break;
@@ -339,7 +382,7 @@ async function main() {
   const sumTried = prev.sumTried3 || {};
   await addSummaries(kept, sumTried);
   for (const k of Object.keys(sumTried)) if (NOW - sumTried[k] > 3 * 864e5) delete sumTried[k];
-  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || "", i.hook || "", (i.also || []).length, i.photo || "", i.cat || ""]));
+  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || "", i.hook || "", (i.also || []).length, i.photo || "", i.cat || "", (i.videos || []).length, (i.posts || []).length]));
   const sameItems = sig(prev.items) === sig(kept);
   const samePosters = JSON.stringify(prev.posters || {}) === JSON.stringify(posters);
   const sameDiag = JSON.stringify(prev.diag || {}) === JSON.stringify(DIAG);

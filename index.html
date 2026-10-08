@@ -358,6 +358,19 @@ button:active{opacity:.75}
 .post .hook{font-size:17px;line-height:1.3;letter-spacing:-.01em}
 .end{padding-top:32px}
 .post.card{padding-bottom:0}.post.card .acts{padding-bottom:2px}.post.card .srcchip:empty{display:none}
+.vid{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000;margin-top:4px}
+.vid img,.vid iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0}
+.vid .play{position:absolute;left:50%;top:44%;width:58px;height:40px;margin:-20px 0 0 -29px;border-radius:12px;background:#FF0033;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.vid .play::after{content:"";position:absolute;left:23px;top:11px;border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #fff}
+.vid .vt{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 9px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;display:flex;flex-direction:column;gap:1px}
+.vid .vt b{font-size:13.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid .vt small{font-size:11.5px;opacity:.8}
+.vid .vbtn{position:absolute;inset:0;width:100%}
+.vid.on .play,.vid.on .vt{display:none}
+.xpost{display:flex;flex-direction:column;gap:5px;margin-top:6px;padding:11px 13px;border-radius:14px;border:1px solid var(--line);background:var(--bg);text-decoration:none;color:var(--ink)}
+.xh{display:flex;align-items:center;gap:6px;min-width:0}.xh svg{width:15px;height:15px;flex:none}
+.xh b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;max-width:62%}.xh small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xt{font-size:14.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 /* tweet layout: avatar column on the left, everything else beside it */
 .post{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:11px;row-gap:6px;padding:12px 16px 4px}
 .post>*{grid-column:2;min-width:0}
@@ -619,6 +632,9 @@ function storyParts(w){
     if(!q){const i=ss.findIndex(x=>/["“][^"”]{12,}["”]/.test(x));if(i>=0){const m=ss[i].match(/["“]([^"”]{12,})["”]/);const by=(ss[i].replace(m[0],"").match(/\b(?:said|says|added|stated|wrote|told)\s+([^,.]+)|([A-Z][\w.' ]+?)\s+(?:said|says|added|stated|wrote)/)||[]);q={text:m[1].replace(/[,.]$/,""),by:(by[1]||by[2]||"").trim()};ss.splice(i,1)}}
     pts=ss.filter(x=>/[.!?"”’)]$/.test(x)).slice(0,3)}
   return {pts,q}}
+const XI=`<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.3L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z"/></svg>`;
+function videoHTML(v){return `<div class="vid" data-yt="${esc(v.id)}"><img src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" alt="" loading="lazy"><span class="play" aria-hidden="true"></span><span class="vt"><b>${esc(v.title)}</b>${v.ch?`<small>${esc(v.ch)} · YouTube</small>`:""}</span><button class="vbtn" data-yt="${esc(v.id)}" aria-label="Play ${esc(v.title)}"></button></div>`}
+function xpostHTML(x){return `<a class="xpost" href="${esc(x.url)}" target="_blank" rel="noopener"><span class="xh">${XI}<b>${esc(x.by)}</b><small>@${esc(x.handle)}${x.date?" · "+esc(x.date):""}</small></span><span class="xt">${esc(x.text)}</span></a>`}
 function storyHTML(w,full){const {pts,q}=storyParts(w);
   return `${pts.length?`<ul class="pts">${pts.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}${q&&q.text?`<blockquote class="pq"><p>“${esc(q.text)}”</p>${q.by?`<cite>${esc(q.by)}</cite>`:""}</blockquote>`:""}`}
 const photoTag=(u,alt="")=>`<img src="${esc(u)}" alt="${esc(alt)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('.media')?this.closest('.media').remove():this.remove()">`;
@@ -644,7 +660,8 @@ function postHTML(it){
     return `<article class="card post webpost" id="post-${it.key}"><div class="ph">${f?`<button class="av pic" data-film="${w.film}" aria-label="${esc(f.t)}">${img(w.film)}</button>`:`<span class="av" style="background:${bg};color:${fg}">${esc(ini(w.source))}</span>`}
       <div class="nm"><b>${esc(f?f.t:w.source)}</b><small>${f?"via "+esc(w.source)+" · ":""}${ago(w.ts)}</small></div>${w.tag==="news"?"":tag(w.tag)}</div>
       <button class="ptxt" data-web="${it.key}" style="text-align:left"><span class="hook">${esc(w.hook||w.title)}</span>${storyHTML(w)}</button>
-      ${(()=>{if(w.photo)return `<button class="media pic" data-web="${it.key}" aria-label="Open">${photoTag(w.photo,w.hook||w.title)}</button>`;if(!f||!hasImg(w.film))return"";const n=shotFor(w.film,w.id);return n===null?"":`<button class="media pic" data-web="${it.key}" aria-label="Open">${img(w.film,"shot",String(n)+"#")}</button>`})()}
+      ${(w.posts||[]).slice(0,1).map(xpostHTML).join("")}
+      ${(()=>{if((w.videos||[]).length)return videoHTML(w.videos[0]);if(w.photo)return `<button class="media pic" data-web="${it.key}" aria-label="Open">${photoTag(w.photo,w.hook||w.title)}</button>`;if(!f||!hasImg(w.film))return"";const n=shotFor(w.film,w.id);return n===null?"":`<button class="media pic" data-web="${it.key}" aria-label="Open">${img(w.film,"shot",String(n)+"#")}</button>`})()}
       ${(w.also||[]).length?`<span class="srcchip">${alsoHTML(w)}</span>`:""}
       ${actions(it)}</article>`}
   const p=POSTS[it.c],r=p.k==="rumour"?RUMS[p.r]:null,fid=r?r.f:p.f,f=F[fid];
@@ -742,7 +759,7 @@ function openNews(i){const p=POSTS[i],f=F[p.f];
    <a class="btn wa" href="${wa(shareText({c:i}))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
 function openWeb(key){const it=ITEM(key);if(!it.w)return;const w=it.w,f=w.film&&F[w.film];
   sheet(`${w.photo?`<span class="hero pic">${photoTag(w.photo)}</span>`:f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"shot",w.id)}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
-   ${w.sum?`<div class="sheetstory">${storyHTML(w,1)}</div>${w.tag==="rumour"?`<p style="font-size:13px;color:var(--muted)">This is a report, not an official announcement.</p>`:""}`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
+   ${w.sum?`<div class="sheetstory">${storyHTML(w,1)}${(w.videos||[]).map(videoHTML).join("")}${(w.posts||[]).map(xpostHTML).join("")}</div>${w.tag==="rumour"?`<p style="font-size:13px;color:var(--muted)">This is a report, not an official announcement.</p>`:""}`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
    ${(w.also||[]).length?`<h4>Also reported by</h4><div class="meta" style="flex-wrap:wrap;gap:6px 14px">${w.also.map(a=>`<a href="${esc(a.url)}" target="_blank" rel="noopener" style="display:inline-flex;gap:6px;align-items:center">${fav(a.srcUrl)}${esc(a.source)}</a>`).join("")}</div>`:""}
    <p class="credit">${fav(w.srcUrl)}${w.photo?"Story and photo: ":"Reported by "} <a href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">${esc(w.source)}</a></p>
    ${f?`<button class="btn out" data-film="${w.film}">More on ${esc(f.t)}</button>`:""}
@@ -870,6 +887,7 @@ async function loadLive(first,apply){
 /* ===== events ===== */
 document.addEventListener("click",e=>{const t=e.target;
   const tb=t.closest("[data-tab]");if(tb){close();if(tb.dataset.tab==="feed"&&tab==="feed"&&scrollY<40){refresh();return}FILM_FILTER="";show(tb.dataset.tab);return}
+  const yt=t.closest("[data-yt]");if(yt){const box=yt.closest(".vid");box.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${box.dataset.yt}?autoplay=1&playsinline=1&rel=0" title="Video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;box.classList.add("on");return}
   const ct=t.closest("[data-cat]");if(ct){CAT=ct.dataset.cat;FILM_FILTER="";show("feed");return}
   const ff=t.closest("[data-ff]");if(ff){FILM_FILTER=FILM_FILTER===ff.dataset.ff?"":ff.dataset.ff;show("feed");return}
   const th=t.closest("[data-theme-set]");if(th){SET.theme=th.dataset.themeSet;saveSet();applySet();openSettings();return}
