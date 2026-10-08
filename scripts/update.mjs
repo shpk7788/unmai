@@ -22,6 +22,9 @@ const QUERIES = [
   "Tamil movie release date",
   "Tamil OTT release",
   "Jailer 2 Rajinikanth",
+  "Kollywood celebrity",
+  "Tamil actress",
+  "Tamil actor wedding",
   ...FILMS.filter(f => f.year && f.year >= 2026).slice(0, 12).map(f => `"${f.aliases[0]}" Tamil`),
 ];
 
@@ -90,8 +93,10 @@ export function relevant(it) {
   if (film) return true;
   if (!TAMIL.test(t)) return false;
   if (OTHER.test(t) && !/tamil|kollywood/i.test(t)) return false;
-  return CINEMA.test(t);
+  return CINEMA.test(t) || CELEB.test(t);
 }
+// Public-life celebrity news (the AI later drops private-life speculation).
+const CELEB = /\b(actor|actress|star|celebrity|wedding|married|engaged|engagement|birthday|instagram|post(ed|s)?|photos?|pics|look|outfit|vacation|fans|viral|reacts?|slams|responds|interview|award|honou?red|temple|visit(s|ed)?)\b/i;
 
 // Items from a film-specific search belong to that film when the title names it.
 function filmFromQuery(q, title) {
@@ -139,6 +144,15 @@ export async function decodeGoogleNews(url) {
   return hit ? JSON.parse(`"${hit[1].replace(/\\\\/g, "\\")}"`) : null;
 }
 
+// The photo the publisher ran with this story (usually the official still or press photo for this exact news).
+export function articlePhoto(html) {
+  const m = html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)(?::src)?["'][^>]+content=["']([^"']+)/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
+  const u = m ? decode(m[1]).trim() : "";
+  if (!/^https:\/\//.test(u) || /logo|default|placeholder|fallback|favicon|sprite|blank|no-?image/i.test(u)) return "";
+  return u;
+}
+
 export function articleText(html) {
   const og = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)/i) || [])[1] || "";
   const body = html.replace(/<(script|style|noscript|nav|header|footer|aside|form)[\s\S]*?<\/\1>/gi, " ");
@@ -147,10 +161,11 @@ export function articleText(html) {
 }
 
 const SYSTEM = `You write posts for Unmai, a Tamil cinema news app read by fans on their phones.
-From the article text, return JSON with three fields:
+From the article text, return JSON with four fields:
 "hook": a short, punchy headline in your own words (max 12 words) that makes a fan want to read on. It must be accurate: no exaggeration, no question bait, no claims that aren't in the text, no ALL CAPS, no emoji.
 "summary": the whole story told on its own so the reader never needs the original article: 3 to 5 short sentences, 60 to 90 words. Lead with the single most interesting fact. Then the juice: names, numbers, dates, what was actually said. If someone is quoted, include their most telling line as a short direct quote (under 20 words) with who said it. Skip filler, background everyone knows, and promotional fluff. Never end with a sentence about fans being excited, the film being much awaited, or what fans can expect: stop when the facts run out. Write like a sharp entertainment reporter, in plain English and in your own words; apart from that one quote, never copy sentences from the article. If something is unconfirmed (sources, reportedly, buzz), say it is reported, not confirmed.
-"score": a whole number 1 to 10 for how interesting this is to Tamil cinema fans. 8 to 10: big-star films, release dates, trailers, box office milestones, casting news, confirmed or busted rumours. 4 to 7: smaller films, interviews with news in them, OTT dates. 1 to 3: song uploads, listicles, gossip about private lives, anything not about Tamil cinema.
+"cat": one of "box" (box office), "release" (release dates, trailers, teasers, songs, first looks, censor), "casting" (new films, who is in or directing what, shoots), "ott" (streaming), "rumour" (unconfirmed reports), "celeb" (stars' public lives: appearances, social posts, weddings or engagements they announced, birthdays, awards, fashion, statements), "other".
+"score": a whole number 1 to 10 for how interesting this is to Tamil cinema fans. 8 to 10: big-star films, release dates, trailers, box office milestones, casting news, confirmed or busted rumours. 4 to 7: smaller films, interviews with news in them, OTT dates. Celebrity news the star made public or did in public (a post, an appearance, an announced wedding, an award, a reply to critics in their own words) scores 5 to 8 when it involves a well-known Tamil star. 1 to 3: song uploads, listicles, anything not about Tamil cinema, and any speculation about a person's dating life, health, pregnancy, divorce or family that they have not confirmed themselves (score these 1 and keep the summary neutral).
 Use only facts in the article text. If the text is empty or unrelated to the headline, return {"hook":"","summary":"","score":0}.`;
 
 let modelBlocked = false;
@@ -198,7 +213,7 @@ async function summarise(title, source, text) {
         let o; try { o = JSON.parse(out.replace(/^```(json)?|```$/g, "")); } catch { DIAG.ai.push(`bad json ${model}`); return "SKIP"; }
         if (!o || !o.summary || !(+o.score > 0)) return "SKIP";
         const tidy = x => String(x || "").replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim();
-        return { hook: tidy(o.hook).slice(0, 120), sum: tidy(o.summary).slice(0, 500), score: Math.max(1, Math.min(10, Math.round(+o.score))) };
+        return { hook: tidy(o.hook).slice(0, 120), sum: tidy(o.summary).slice(0, 500), score: Math.max(1, Math.min(10, Math.round(+o.score))), ...(o.cat ? { cat: String(o.cat).toLowerCase().slice(0, 10) } : {}) };
       } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); break; }
     }
   }
@@ -217,7 +232,9 @@ async function addSummaries(items, tried) {
       it.realUrl = real;
       const res = await fetch(real, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" }, redirect: "follow" });
       if (!res.ok) { DIAG.fetchErr++; tried[it.id] = NOW; continue; }
-      const text = articleText(await res.text());
+      const page = await res.text();
+      it.photo = articlePhoto(page);
+      const text = articleText(page);
       if (text.length < 200) { DIAG.short++; tried[it.id] = NOW; continue; }
       const res2 = await summarise(it.title, it.source, text);
       if (res2 === "SKIP") { DIAG.skip++; it.score = 0; tried[it.id] = NOW; }
@@ -225,6 +242,14 @@ async function addSummaries(items, tried) {
       // sum === null means the AI call failed: don't mark as tried, retry next run
     } catch (e) { DIAG.fetchErr++; tried[it.id] = NOW; console.warn("summary failed:", it.title.slice(0, 50), e.message); }
   }
+  let ph = 0;
+  for (const it of items) {
+    if (ph >= 25 || it.photo !== undefined || !it.v || !it.realUrl) continue;
+    ph++;
+    try { const r = await fetch(it.realUrl, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" }, redirect: "follow" }); it.photo = r.ok ? articlePhoto(await r.text()) : ""; }
+    catch { it.photo = ""; }
+  }
+  DIAG.photos = ph;
   console.log(`Added ${done} summaries.`, JSON.stringify(DIAG));
 }
 
@@ -298,7 +323,7 @@ async function main() {
       id: it.id, title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
       tag: it.tag || tagOf(it.title), film: it.film || matchFilm(it.title),
       ...(it.realUrl ? { realUrl: it.realUrl } : {}), ...(it.sum ? { sum: it.sum } : {}),
-      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
+      ...(it.hook ? { hook: it.hook } : {}), ...(it.v ? { v: it.v } : {}), ...(it.cat ? { cat: it.cat } : {}), ...(it.photo !== undefined ? { photo: it.photo } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
       ...(it.also && it.also.length ? { also: it.also.slice(0, 8) } : {}),
     });
     if (kept.length >= MAX_ITEMS) break;
@@ -308,7 +333,7 @@ async function main() {
   const sumTried = prev.sumTried3 || {};
   await addSummaries(kept, sumTried);
   for (const k of Object.keys(sumTried)) if (NOW - sumTried[k] > 3 * 864e5) delete sumTried[k];
-  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || "", i.hook || "", (i.also || []).length]));
+  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || "", i.hook || "", (i.also || []).length, i.photo || "", i.cat || ""]));
   const sameItems = sig(prev.items) === sig(kept);
   const samePosters = JSON.stringify(prev.posters || {}) === JSON.stringify(posters);
   const sameDiag = JSON.stringify(prev.diag || {}) === JSON.stringify(DIAG);

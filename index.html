@@ -164,7 +164,7 @@ a{color:inherit}
 .attr{padding:6px 24px 24px;text-align:center;color:var(--muted);font-size:11.5px}
 
 /* new posts pill */
-.newpill{position:sticky;top:calc(60px + env(safe-area-inset-top,0px));z-index:9;display:flex;justify-content:center}
+.newpill{position:sticky;top:calc(108px + env(safe-area-inset-top,0px));z-index:9;display:flex;justify-content:center}
 .newpill:empty{display:none}
 .newpill button{margin:8px 0 2px;background:var(--pop);color:#fff;font-weight:700;font-size:13.5px;padding:8px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(242,107,29,.35);display:flex;align-items:center;gap:6px}
 .newpill svg{width:15px;height:15px}
@@ -333,6 +333,10 @@ button:active{opacity:.75}
 .seg button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .setrow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-weight:600;text-decoration:none}
 .setrow small{color:var(--muted);font-weight:500}
+.cats{position:sticky;top:calc(57px + env(safe-area-inset-top,0px));z-index:9;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:0 10px;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.cats::-webkit-scrollbar{display:none}
+.cats button{flex:none;padding:13px 10px 11px;font-size:14.5px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.cats button[aria-selected="true"]{color:var(--ink);font-weight:800;border-bottom-color:var(--pop)}
 /* tweet layout: avatar column on the left, everything else beside it */
 .post{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:11px;row-gap:6px;padding:12px 16px 4px}
 .post>*{grid-column:2;min-width:0}
@@ -548,7 +552,15 @@ function webItems(){
   }
   return out;
 }
-let FILM_FILTER="";
+let FILM_FILTER="",CAT="";
+const CATS=[["","All"],["box","Box office"],["release","Releases & trailers"],["casting","Casting"],["celeb","Celebs"],["rumour","Rumours"],["ott","OTT"]];
+function catOf(w){if(w.cat&&w.cat!=="other")return w.cat;const t=w.title;
+  if(w.tag==="box")return"box";if(w.tag==="ott")return"ott";if(w.tag==="rumour")return"rumour";
+  if(/trailer|teaser|release|first look|glimpse|song|single|censor|premiere/i.test(t))return"release";
+  if(/joins|cast|signs|shoot|onboard|next film|teams up|directed by|announce/i.test(t))return"casting";
+  if(/wedding|married|engag|birthday|instagram|photos|pics|viral|fans|slams|reacts|vacation|outfit|award|temple/i.test(t))return"celeb";return"other"}
+const curCat=p=>p.k==="box"?"box":p.k==="rumour"?"rumour":p.k==="news"?(/release|trailer|censor/i.test(p.h)?"release":"casting"):"";
+function catHTML(){return `<div class="cats" role="tablist">${CATS.map(([k,l])=>`<button role="tab" data-cat="${k}" aria-selected="${CAT===k}">${l}</button>`).join("")}</div>`}
 function feedItems(all){
   const out=POSTS.map((p,i)=>({key:"c"+i,ts:curatedTs(i),c:i}));
   const titles=POSTS.map(p=>(p.h||"").toLowerCase());
@@ -558,7 +570,7 @@ function feedItems(all){
     out.push({key:"w"+it.id,ts:it.ts,w:it});
   }
   const f=FILM_FILTER;
-  return out.filter(it=>!f||(it.w?it.w.film===f:(POSTS[it.c].k==="rumour"?RUMS[POSTS[it.c].r].f:POSTS[it.c].f)===f)).sort((a,b)=>b.ts-a.ts);
+  return out.filter(it=>!CAT||(it.w?catOf(it.w)===CAT:curCat(POSTS[it.c])===CAT)).filter(it=>!f||(it.w?it.w.film===f:(POSTS[it.c].k==="rumour"?RUMS[POSTS[it.c].r].f:POSTS[it.c].f)===f)).sort((a,b)=>b.ts-a.ts);
 }
 const briefs=()=>webItems().filter(w=>!w.sum&&(!FILM_FILTER||w.film===FILM_FILTER)).slice(0,12);
 function topStory(){const day=Date.now()-36*3600e3;
@@ -579,6 +591,7 @@ function critMini(f){const c=crit(f),v=tier(c.score);return `<div class="sc2"><d
 function media(fid,attr,extra="",seed){return `<button class="media pic" ${attr} aria-label="Open">${img(fid,seed?"shot":"backdrop",seed)}${seed?"":`<span class="ov">${esc(F[fid].t)}</span>`}${extra}</button>`}
 /* Don't show the exact same photo twice within a few posts: if the film has no fresh still, the post goes text-only. */
 let RECENT=[];
+const photoTag=(u,alt="")=>`<img src="${esc(u)}" alt="${esc(alt)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('.media')?this.closest('.media').remove():this.remove()">`;
 function shotFor(fid,seed){const u=pickShot(fid,seed);if(!u)return null;
   const g=galleryOf(fid);let k=hsh(seed);for(let i=0;i<g.length;i++){const c=g[(k+i)%g.length];if(!RECENT.includes(c)){RECENT=[c,...RECENT].slice(0,8);return (k+i)%g.length}}return null}
 function curatedBody(p,i){
@@ -601,7 +614,7 @@ function postHTML(it){
     return `<article class="card post webpost" id="post-${it.key}"><div class="ph">${f?`<button class="av pic" data-film="${w.film}" aria-label="${esc(f.t)}">${img(w.film)}</button>`:`<span class="av" style="background:${bg};color:${fg}">${esc(ini(w.source))}</span>`}
       <div class="nm"><b>${esc(f?f.t:w.source)}</b><small>${f?"via "+esc(w.source)+" · ":""}${ago(w.ts)}</small></div>${w.tag==="news"?"":tag(w.tag)}</div>
       <button class="ptxt" data-web="${it.key}" style="text-align:left"><span class="hook">${esc(w.hook||w.title)}</span>${w.sum?esc(w.sum):""}</button>
-      ${(()=>{if(!f||!hasImg(w.film))return"";const n=shotFor(w.film,w.id);return n===null?"":`<button class="media pic" data-web="${it.key}" aria-label="Open">${img(w.film,"shot",String(n)+"#")}</button>`})()}
+      ${(()=>{if(w.photo)return `<button class="media pic" data-web="${it.key}" aria-label="Open">${photoTag(w.photo,w.hook||w.title)}</button>`;if(!f||!hasImg(w.film))return"";const n=shotFor(w.film,w.id);return n===null?"":`<button class="media pic" data-web="${it.key}" aria-label="Open">${img(w.film,"shot",String(n)+"#")}</button>`})()}
       ${(w.also||[]).length?`<span class="srcchip">${alsoHTML(w)}</span>`:""}
       ${actions(it)}</article>`}
   const p=POSTS[it.c],r=p.k==="rumour"?RUMS[p.r]:null,fid=r?r.f:p.f,f=F[fid];
@@ -622,12 +635,12 @@ function briefHTML(){const b=briefs();if(!b.length)return"";
   return `<div class="brief-h">Just in · summaries on the way</div>${b.map(w=>`<button class="brief" data-web="w${w.id}"><b>${esc(w.title)}</b>${tag(w.tag)}<small>${fav(w.srcUrl)}${esc(w.source)} · ${ago(w.ts)}</small></button>`).join("")}`}
 function feed(){
   RECENT=[];
-  const st=swipeList(),hero=FILM_FILTER?null:topStory(),items=feedItems().filter(it=>!hero||it.key!=="w"+hero.id);
+  const st=swipeList(),hero=FILM_FILTER||CAT?null:topStory(),items=feedItems().filter(it=>!hero||it.key!=="w"+hero.id);
   const pinned=hero?postHTML({key:"w"+hero.id,ts:hero.ts,w:hero}).replace('<article class="card post webpost"','<article class="card post webpost pinned"').replace('<div class="ph">','<span class="pin">📌 Top story</span><div class="ph">'):"";
-  return trendHTML()+pinned+(FILM_FILTER?"":`<div class="stories"><button class="story first" data-swipe="${st[0]?.key||""}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span class="l">Catch up</span></button>
+  return catHTML()+(CAT?"":trendHTML())+pinned+(FILM_FILTER||CAT?"":`<div class="stories"><button class="story first" data-swipe="${st[0]?.key||""}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span class="l">Catch up</span></button>
    ${st.map(it=>{const fid=it.w?it.w.film:POSTS[it.c].f;return `<button class="story" data-swipe="${it.key}"><span class="ring ${SEEN.has(it.key)?"seen":""}"><span class="pic">${img(fid)}</span></span><span class="l">${esc(F[fid].t)}</span></button>`}).join("")}</div>`
    +liveBanner())+`<div class="newpill" id="newpill"></div>`
-   +items.map(postHTML).join("")
+   +(items.length?items.map(postHTML).join(""):`<div class="end"><b>Nothing here yet</b>New stories arrive every 15 minutes.</div>`)
    +`<div class="end">${I.popcorn}<b>You're all caught up</b>New stories arrive every 15 minutes.</div>`+attribution();
 }
 const attribution=()=>`<nav class="attr" aria-label="Film pages" style="padding-bottom:4px"><a href="/tamil-movie-release-dates.html">Tamil release dates</a> · ${Object.keys(F).filter(id=>F[id].cal||F[id].rev).map(id=>`<a href="/film/${id}.html">${esc(F[id].t)}</a>`).join(" · ")} · <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></nav><p class="attr">Film images from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Headlines link to their publishers. Box office figures are tracker estimates.</p>`;
@@ -686,6 +699,7 @@ function show(t,keep){
   document.querySelectorAll(".tabbar button").forEach(b=>{if(b.dataset.tab===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   $("#view").innerHTML=t==="feed"?feed():t==="reviews"?reviews():t==="rumours"?rumours():calendar();
   if(!keep)window.scrollTo(0,0);
+  const sel=document.querySelector('.cats [aria-selected="true"]');if(sel){const c=sel.parentNode;c.scrollLeft=sel.offsetLeft-(c.clientWidth-sel.offsetWidth)/2}
   if(t==="feed"&&PENDING.length)showPill();
 }
 
@@ -697,10 +711,10 @@ function openNews(i){const p=POSTS[i],f=F[p.f];
    ${f.cal||f.rev?`<button class="btn out" data-film="${p.f}">More on ${esc(f.t)}</button>`:""}
    <a class="btn wa" href="${wa(shareText({c:i}))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
 function openWeb(key){const it=ITEM(key);if(!it.w)return;const w=it.w,f=w.film&&F[w.film];
-  sheet(`${f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"shot",w.id)}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
+  sheet(`${w.photo?`<span class="hero pic">${photoTag(w.photo)}</span>`:f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"shot",w.id)}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
    ${w.sum?`<p style="font-size:16.5px;line-height:1.6;color:var(--ink)">${esc(clean(w.sum))}</p>${w.tag==="rumour"?`<p style="font-size:13px;color:var(--muted)">This is a report, not an official announcement.</p>`:""}`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
    ${(w.also||[]).length?`<h4>Also reported by</h4><div class="meta" style="flex-wrap:wrap;gap:6px 14px">${w.also.map(a=>`<a href="${esc(a.url)}" target="_blank" rel="noopener" style="display:inline-flex;gap:6px;align-items:center">${fav(a.srcUrl)}${esc(a.source)}</a>`).join("")}</div>`:""}
-   <p class="credit">${fav(w.srcUrl)}Reported by <a href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">${esc(w.source)}</a></p>
+   <p class="credit">${fav(w.srcUrl)}${w.photo?"Story and photo: ":"Reported by "} <a href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">${esc(w.source)}</a></p>
    ${f?`<button class="btn out" data-film="${w.film}">More on ${esc(f.t)}</button>`:""}
    <a class="btn wa" href="${wa(shareText(it))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
 function openRum(i){const r=RUMS[i];
@@ -826,6 +840,7 @@ async function loadLive(first,apply){
 /* ===== events ===== */
 document.addEventListener("click",e=>{const t=e.target;
   const tb=t.closest("[data-tab]");if(tb){close();if(tb.dataset.tab==="feed"&&tab==="feed"&&scrollY<40){refresh();return}FILM_FILTER="";show(tb.dataset.tab);return}
+  const ct=t.closest("[data-cat]");if(ct){CAT=ct.dataset.cat;FILM_FILTER="";show("feed");return}
   const ff=t.closest("[data-ff]");if(ff){FILM_FILTER=FILM_FILTER===ff.dataset.ff?"":ff.dataset.ff;show("feed");return}
   const th=t.closest("[data-theme-set]");if(th){SET.theme=th.dataset.themeSet;saveSet();applySet();openSettings();return}
   const sz=t.closest("[data-size-set]");if(sz){SET.size=sz.dataset.sizeSet;saveSet();applySet();openSettings();return}
