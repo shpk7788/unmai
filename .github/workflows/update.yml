@@ -9,6 +9,7 @@ on:
     paths:
       - "scripts/**"
       - "data/films.json"
+      - "index.html"
       - ".github/workflows/update.yml"
 
 permissions:
@@ -31,13 +32,13 @@ jobs:
         env:
           TMDB_TOKEN: ${{ secrets.TMDB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node scripts/update.mjs
+        run: node scripts/update.mjs && node scripts/pages.mjs
       - name: Commit if changed
         run: |
-          if [ -n "$(git status --porcelain data/live.json)" ]; then
+          if [ -n "$(git status --porcelain data/live.json film tamil-movie-release-dates.html sitemap.xml)" ]; then
             git config user.name "unmai-bot"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add data/live.json
+            git add data/live.json film tamil-movie-release-dates.html sitemap.xml robots.txt
             git commit -m "Auto-update news $(date -u +%Y-%m-%dT%H:%MZ)"
             git pull --rebase --autostash origin main
             git push

@@ -3,14 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Unmai Cinema</title>
+<title>Unmai: Tamil Cinema News, Reviews, Rumours and Release Dates</title>
+<link rel="canonical" href="https://unmai.snyp.io/">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Unmai">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta property="og:image" content="https://unmai.snyp.io/icons/icon-512.png">
+<meta property="og:url" content="https://unmai.snyp.io/">
+<meta name="twitter:card" content="summary">
 <meta name="description" content="Unmai: Tamil cinema news every 15 minutes, critic reviews, rumour checks and release dates, with sources for everything.">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1116" media="(prefers-color-scheme: dark)">
 <meta property="og:title" content="Unmai: Tamil cinema, minus the noise">
 <meta property="og:description" content="Tamil cinema news, critic reviews, rumour checks and release dates.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Libre+Franklin:wght@400;500;600;700;800&family=Hind+Madurai:wght@600&display=swap">
+<script>(function(){try{var s=JSON.parse(localStorage.getItem("unmai-set")||"{}"),t=s.theme||"system",d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";if(s.size)document.documentElement.dataset.size=s.size}catch(e){}})()</script>
 <style>
 :root{padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}img{max-width:100%}
 /* Layout: one white phone-width column, posts separated by thin lines, fixed bottom tab bar. Calm, flat, one orange accent. Light only, by choice. */
@@ -22,8 +35,17 @@
   --ui:"Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif;
   --cond:"Barlow Condensed", "Arial Narrow", sans-serif;
   --ta:"Hind Madurai", system-ui, sans-serif;
+  --sheet:#FFFFFF; --glass:rgba(255,255,255,.92); --hot:#FFF0F3; --hot-line:#FFD3DD;
   color-scheme:light;
 }
+:root[data-theme="dark"]{
+  --bg:#0E1116; --card:#0E1116; --ink:#E9ECEF; --soft:#B7BEC6; --muted:#8A939C; --line:#262C33; --tint:#1A1F26;
+  --pop:#FF7A2E; --pop-soft:#2C1A10; --pop-deep:#FF9A5C;
+  --mint:#10291C; --mint-ink:#4FD08A; --butter:#2B2210; --butter-ink:#F2B850; --lilac:#211B3A; --lilac-ink:#A894FF; --peach:#331716; --peach-ink:#FF7B76; --sky:#11223A; --sky-ink:#7DB6F0;
+  --sheet:#161B22; --glass:rgba(14,17,22,.9); --hot:#2A1219; --hot-line:#4A1D2A;
+  color-scheme:dark;
+}
+:root[data-size="big"] body{font-size:16.5px}:root[data-size="big"] .ptxt{font-size:17px}:root[data-size="big"] .ptxt strong{font-size:19px}
 *{-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg)}
 body{color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;margin:0}
@@ -35,9 +57,9 @@ a{color:inherit}
 @media (max-width:620px){.app{border:0}}
 
 /* header */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;padding:10px 16px}
-.mark{width:32px;height:32px;border-radius:9px;background:var(--pop);color:#fff;display:grid;place-items:center;font-family:var(--ta);font-size:18px;padding-top:2px;box-sizing:border-box;flex:none}
+.mark{width:32px;height:32px;border-radius:9px;flex:none}
 .wm{display:flex;flex-direction:column;line-height:1.1;flex:1;min-width:0}
 .wm h1{margin:0;font-weight:800;font-size:20px;letter-spacing:-.02em}
 .wm small{display:none}
@@ -48,7 +70,7 @@ a{color:inherit}
 .dot{position:absolute;top:4px;right:4px;min-width:16px;height:16px;border-radius:8px;background:var(--pop);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 3px;box-sizing:border-box}
 
 /* bottom tabs */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .tabbar nav{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
 .tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;color:var(--muted);font-size:11.5px;font-weight:600}
 .tabbar svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -72,7 +94,7 @@ a{color:inherit}
 .meta b{color:var(--soft);font-weight:600}
 .intro{padding:4px 16px 8px;color:var(--muted);font-size:13.5px;margin:0}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;padding:13px 16px;border-radius:999px;background:var(--pop);color:#fff;text-align:center;text-decoration:none}
-.btn.out{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.out{background:var(--sheet);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
 .btn.wa{background:#1FA855}
 .sec-h{padding:20px 16px 2px;font-size:19px;font-weight:800;margin:0}
 .sec-h svg{display:none}
@@ -85,13 +107,13 @@ a{color:inherit}
 .story{flex:0 0 68px;display:flex;flex-direction:column;align-items:center;gap:6px}
 .ring{display:block;width:66px;height:66px;border-radius:50%;padding:2.5px;box-sizing:border-box;background:conic-gradient(from 200deg,var(--pop),#F43F5E,#F59E0B,var(--pop))}
 .ring.seen{background:var(--line)}
-.ring .pic{width:100%;height:100%;border-radius:50%;border:2.5px solid #fff;box-sizing:border-box}
+.ring .pic{width:100%;height:100%;border-radius:50%;border:2.5px solid var(--bg);box-sizing:border-box}
 .story span.l{font-size:12px;color:var(--soft);max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .story.first .ring{background:var(--ink)}
-.story.first .pic{display:grid;place-items:center;background:var(--ink);color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:1.1}
+.story.first .pic{display:grid;place-items:center;background:var(--ink);color:var(--bg);font-weight:800;font-size:12px;text-align:center;line-height:1.1}
 
 /* live banner */
-.live-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;margin:12px 16px;padding:12px 14px;border-radius:16px;background:#FFF0F3;box-shadow:inset 0 0 0 1px #FFD3DD;width:calc(100% - 32px);box-sizing:border-box}
+.live-b{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;margin:12px 16px;padding:12px 14px;border-radius:16px;background:var(--hot);box-shadow:inset 0 0 0 1px var(--hot-line);width:calc(100% - 32px);box-sizing:border-box}
 .live-b b{display:block;font-size:14.5px;font-weight:800;color:#C21543}
 .live-b span.s{display:block;font-size:13px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .live-b .go{font-weight:800;color:#C21543;font-size:14px}
@@ -162,7 +184,7 @@ a{color:inherit}
 .filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:14px 16px 6px}
 .filters::-webkit-scrollbar{display:none}
 .filters button{flex:none;padding:7px 14px;border-radius:999px;font-size:14px;font-weight:600;color:var(--soft);box-shadow:inset 0 0 0 1px var(--line)}
-.filters button[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:none}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);box-shadow:none}
 .rum{display:flex;flex-direction:column;gap:8px;padding:16px;width:100%;box-sizing:border-box}
 .rum h2{margin:0;font-size:17px;line-height:1.3;font-weight:700}
 .tipcard{margin:14px 16px 4px;padding:14px;border-radius:16px;background:var(--pop-soft);display:flex;flex-direction:column;gap:10px}
@@ -190,7 +212,7 @@ a{color:inherit}
 
 /* sheet */
 .scrim{position:fixed;inset:0;z-index:50;background:rgba(15,20,25,.45);display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:#fff;width:100%;max-width:600px;max-height:92%;overflow-y:auto;border-radius:20px 20px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+.sheet{background:var(--sheet);width:100%;max-width:600px;max-height:92%;overflow-y:auto;border-radius:20px 20px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
 @keyframes up{from{transform:translateY(30px);opacity:.6}}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center;margin-bottom:4px;flex:none}
 .sheet h2{margin:0;font-size:22px;line-height:1.25;font-weight:800;text-wrap:balance}
@@ -200,7 +222,7 @@ a{color:inherit}
 .sheet>.meta .tag,.slide .bd .tag{align-self:flex-start}
 .tl{display:flex;flex-direction:column;border-left:2px solid var(--line);margin-left:5px}
 .tl div{padding:0 0 14px 16px;position:relative;display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--soft)}
-.tl div::before{content:"";position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--pop)}
+.tl div::before{content:"";position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--sheet);border:2px solid var(--pop)}
 .tl b{font-size:12.5px;color:var(--ink)}
 .big2{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;flex:none}
 .big2>div{padding:14px;display:flex;flex-direction:column;gap:2px}
@@ -231,15 +253,15 @@ a{color:inherit}
 .stars button{flex:1;height:44px;border-radius:12px;text-align:center;font-weight:700;box-shadow:inset 0 0 0 1px var(--line)}
 .stars button.on{background:var(--pop);color:#fff;box-shadow:none}
 textarea{font:inherit;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:76px;resize:vertical;width:100%;box-sizing:border-box}
-select,.sheet input[type=url]{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;box-sizing:border-box;background:#fff;color:var(--ink)}
+select,.sheet input[type=url]{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;box-sizing:border-box;background:var(--sheet);color:var(--ink)}
 label.fl{font-size:13px;font-weight:700;color:var(--soft);margin-bottom:-8px}
 .empty{padding:12px 0;text-align:center;color:var(--muted);font-size:14px}
 .empty svg{display:none}
 
 /* live preview */
-.lv{position:fixed;inset:0;z-index:55;background:#fff;overflow-y:auto}
+.lv{position:fixed;inset:0;z-index:55;background:var(--bg);overflow-y:auto}
 .lv-in{max-width:600px;margin:0 auto;padding-bottom:40px}
-.lv-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.lv-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .lv-top .t{flex:1;min-width:0}
 .lv-top b{font-size:18px;font-weight:800;margin-right:6px}
 .lv-top small{display:block;font-size:12.5px;color:var(--muted)}
@@ -255,7 +277,7 @@ label.fl{font-size:13px;font-weight:700;color:var(--soft);margin-bottom:-8px}
 
 /* 60-second swipe */
 .sw{position:fixed;inset:0;z-index:60;background:#000;display:flex;justify-content:center}
-.deck{width:100%;max-width:460px;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;background:#fff}
+.deck{width:100%;max-width:460px;height:100%;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;background:var(--bg)}
 .deck::-webkit-scrollbar{display:none}
 .slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;flex-direction:column}
 .slide .pic{flex:0 0 44%}
@@ -268,21 +290,61 @@ label.fl{font-size:13px;font-weight:700;color:var(--soft);margin-bottom:-8px}
 @keyframes nudge{50%{transform:translateY(-4px)}}
 .swx{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:2;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:17px;text-align:center}
 .count{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:2;color:#fff;font-size:12px;font-weight:700;background:rgba(0,0,0,.5);padding:4px 10px;border-radius:999px}
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-weight:600;font-size:13.5px;z-index:90;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:13.5px;z-index:90;white-space:nowrap}
 @media (hover:hover){.film:hover,.rum:hover,.cal:hover,.bo:hover{background:#FAFBFC}.acts button:hover{background:var(--tint)}}
 button:active{opacity:.75}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
+/* top story, trending, compact headlines, pull to refresh, settings */
+.hero-s{display:block;cursor:pointer;padding:14px 16px 16px;border-bottom:1px solid var(--line)}
+.hero-s .kick{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--pop-deep);margin-bottom:10px}
+.hero-s .kick i{width:8px;height:8px;border-radius:50%;background:var(--pop);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.hero-s .media{aspect-ratio:16/10;margin-bottom:12px}
+.hero-s h2{margin:0 0 6px;font-size:22px;line-height:1.2;font-weight:800;letter-spacing:-.015em;text-wrap:balance}
+.hero-s p{margin:0;color:var(--soft);font-size:15.5px;line-height:1.5}
+.hero-s .meta2{margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);font-weight:600}
+.trend{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 16px;border-bottom:1px solid var(--line)}
+.trend::-webkit-scrollbar{display:none}
+.trend button{flex:none;display:flex;align-items:center;gap:7px;padding:5px 12px 5px 5px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line);font-size:13.5px;font-weight:700;white-space:nowrap}
+.trend button .tp{width:26px;height:26px;border-radius:50%;overflow:hidden;position:relative;flex:none;background:var(--tint)}
+.trend button small{color:var(--muted);font-weight:600}
+.trend button[aria-pressed="true"]{background:var(--ink);color:var(--bg);box-shadow:none}
+.trend button[aria-pressed="true"] small{color:var(--bg);opacity:.7}
+.trend .lab{flex:none;align-self:center;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.hook{display:block;font-weight:800;color:var(--ink);font-size:17.5px;line-height:1.3;margin-bottom:4px;text-wrap:balance}
+.also{font-size:12.5px;font-weight:700;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.also b{display:inline-flex}.also b img,.also b span{width:16px;height:16px;border-radius:50%;margin-left:-5px;box-shadow:0 0 0 2px var(--bg);background:var(--tint)}
+.also b :first-child{margin-left:0}
+.brief-h{padding:16px 16px 4px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brief{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;width:100%;padding:11px 16px;border-bottom:1px solid var(--line)}
+.brief b{font-weight:700;font-size:15px;line-height:1.35;color:var(--ink)}
+.brief small{grid-column:1;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.brief small img{width:14px;height:14px;border-radius:3px}
+.brief .tag{grid-row:1;grid-column:2;align-self:start}
+.ptr{height:0;overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:12.5px;font-weight:700}
+.ptr .spin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--pop);transition:transform .05s linear}
+.ptr.go .spin{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.set{display:flex;flex-direction:column;gap:8px}
+.set h4{margin:6px 0 0}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--tint);border-radius:12px;padding:3px}
+.seg button{padding:10px 6px;border-radius:9px;text-align:center;font-weight:700;font-size:14px;color:var(--soft)}
+.seg button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.setrow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-weight:600;text-decoration:none}
+.setrow small{color:var(--muted);font-weight:500}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="top"><div class="brand">
-    <span class="mark" aria-hidden="true">உ</span>
+    <img class="mark" src="/icons/favicon.svg" alt="" width="32" height="32">
     <div class="wm"><h1>Unmai</h1><small>Tamil cinema, minus the noise</small></div>
     <span class="upd" id="upd" hidden></span>
     <button class="ibtn" id="savedBtn" aria-label="Saved posts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span class="dot" id="savedDot" hidden></span></button>
+    <button class="ibtn" id="setBtn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   </div></header>
+  <div class="ptr" id="ptr" aria-hidden="true"><span class="spin"></span></div>
   <main id="view"></main>
 </div>
 <div class="tabbar"><nav aria-label="Sections">
@@ -449,19 +511,48 @@ const critLine=f=>{const c=crit(f);return `${c.pos} of ${c.n} positive`};
 
 /* ===== feed items: curated (c) + automatic from the web (w) ===== */
 function curatedTs(i){const p=POSTS[i];return parseD(p.k==="rumour"?RUMS[p.r].date:p.date)+(1000-i)}
-function feedItems(){
+/* Same story from several outlets is folded into one post (the server does this too; this catches older data). */
+const STOP=new Set("the a an of to in on for and with is at as by from its it this that tamil film movie cinema new first".split(" "));
+const words=t=>new Set(String(t).toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>2&&!STOP.has(w)));
+const sim=(a,b)=>{const A=words(a),B=words(b);if(!A.size||!B.size)return 0;let n=0;A.forEach(w=>B.has(w)&&n++);return n/Math.min(A.size,B.size)};
+const JUNK=/(\|\s*(song|lyric|video)|\b(lyric(al)? video|video song|full song|jukebox)\b|\bott releases? (this|of the) week\b|\bnew ott releases\b|ott releases this week|\b(top|best) \d+ |\bdownload\b)/i;
+const clean=t=>String(t||"").replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g,"$1");
+function webItems(){
+  const out=[];
+  for(const it0 of LIVE_DATA.items||[]){
+    if(JUNK.test(it0.title))continue;
+    const it={...it0,sum:clean(it0.sum),hook:clean(it0.hook)};
+    if(it.score!==undefined&&it.score<4)continue;          // judged low-interest or off-topic
+    const twin=out.find(o=>(o.film&&o.film===it.film&&sim(o.title,it.title)>.5)||sim(o.title,it.title)>.65||(o.hook&&it.hook&&sim(o.hook,it.hook)>.6));
+    if(twin){if(twin.source!==it.source&&!(twin.also||[]).some(a=>a.source===it.source))twin.also=[...(twin.also||[]),{source:it.source,url:it.url,srcUrl:it.srcUrl}];
+      if(!twin.sum&&it.sum)Object.assign(twin,{sum:it.sum,hook:it.hook,score:it.score,realUrl:it.realUrl});continue}
+    out.push({...it,also:[...(it.also||[])]});
+  }
+  return out;
+}
+let FILM_FILTER="";
+function feedItems(all){
   const out=POSTS.map((p,i)=>({key:"c"+i,ts:curatedTs(i),c:i}));
   const titles=POSTS.map(p=>(p.h||"").toLowerCase());
-  for(const it of LIVE_DATA.items||[]){
+  for(const it of webItems()){
     if(titles.some(t=>t&&it.title.toLowerCase().includes(t.slice(0,30))))continue;
+    if(!all&&!it.sum)continue;                              // full posts only once we've written a summary
     out.push({key:"w"+it.id,ts:it.ts,w:it});
   }
-  return out.sort((a,b)=>b.ts-a.ts);
+  const f=FILM_FILTER;
+  return out.filter(it=>!f||(it.w?it.w.film===f:(POSTS[it.c].k==="rumour"?RUMS[POSTS[it.c].r].f:POSTS[it.c].f)===f)).sort((a,b)=>b.ts-a.ts);
 }
-const ITEM=key=>key[0]==="c"?{key,c:+key.slice(1),ts:curatedTs(+key.slice(1))}:{key,w:(LIVE_DATA.items||[]).find(x=>"w"+x.id===key)};
+const briefs=()=>webItems().filter(w=>!w.sum&&(!FILM_FILTER||w.film===FILM_FILTER)).slice(0,12);
+function topStory(){const day=Date.now()-36*3600e3;
+  return webItems().filter(w=>w.sum&&w.ts>day&&w.film&&hasImg(w.film)).sort((a,b)=>((b.score||5)+(b.also||[]).length*.7+b.ts/3.6e6/6)-((a.score||5)+(a.also||[]).length*.7+a.ts/3.6e6/6))[0]}
+function trending(){const c={},since=Date.now()-3*864e5;
+  for(const w of LIVE_DATA.items||[])if(w.film&&F[w.film]&&w.ts>since)c[w.film]=(c[w.film]||0)+1;
+  return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,10)}
+const ITEM=key=>key[0]==="c"?{key,c:+key.slice(1),ts:curatedTs(+key.slice(1))}:{key,w:webItems().find(x=>"w"+x.id===key)||(LIVE_DATA.items||[]).find(x=>"w"+x.id===key)};
+const alsoHTML=w=>{const a=w.also||[];if(!a.length)return"";return `<span class="also"><b>${a.slice(0,3).map(x=>fav(x.srcUrl)||`<span></span>`).join("")}</b>+${a.length} more outlet${a.length>1?"s":""} reporting</span>`};
 
 function shareText(it){
-  if(it.w)return `${it.w.title} (${it.w.source}). Via Unmai`;
+  if(it.w)return `${it.w.hook||it.w.title}. Via Unmai ${location.origin}`;
   const p=POSTS[it.c];
   if(p.k==="review"){const f=F[p.f];return `${f.t}: ${critLine(f)} critics. Via Unmai.`}
   if(p.k==="rumour"){const r=RUMS[p.r];return (r.st==="busted"?"BUSTED: ":r.st==="happened"?"CAME TRUE: ":"RUMOUR: ")+r.t+". Via Unmai."}
@@ -487,9 +578,9 @@ function postHTML(it){
   if(it.w){const w=it.w,f=w.film&&F[w.film];const [bg,fg]=candy(w.source);
     return `<article class="card post webpost" id="post-${it.key}"><div class="ph">${f?`<button class="av pic" data-film="${w.film}" aria-label="${esc(f.t)}">${img(w.film)}</button>`:`<span class="av" style="background:${bg};color:${fg}">${esc(ini(w.source))}</span>`}
       <div class="nm"><b>${esc(f?f.t:w.source)}</b><small>${esc(f?w.source+" · ":"")}${ago(w.ts)}</small></div>${tag(w.tag)}</div>
-      <button class="ptxt" data-web="${it.key}" style="text-align:left"><strong>${esc(w.title)}</strong>${w.sum?esc(w.sum):""}</button>
+      <button class="ptxt" data-web="${it.key}" style="text-align:left"><span class="hook">${esc(w.hook||w.title)}</span>${w.sum?esc(w.sum):""}</button>
       ${f&&hasImg(w.film)?media(w.film,`data-web="${it.key}"`):""}
-      <span class="srcchip">${fav(w.srcUrl)}${w.sum?"Summary from":"From"} ${esc(w.source)}</span>
+      <span class="srcchip">${fav(w.srcUrl)}Via ${esc(w.source)}${(w.also||[]).length?" · ":""}${alsoHTML(w)}</span>
       ${actions(it)}</article>`}
   const p=POSTS[it.c],r=p.k==="rumour"?RUMS[p.r]:null,fid=r?r.f:p.f,f=F[fid];
   const who=p.k==="review"?"Reviews":p.k==="poll"?"Unmai poll":p.k==="box"?"Box office":r?"Rumour check":p.src;
@@ -500,15 +591,22 @@ function postHTML(it){
 }
 const swipeList=()=>feedItems().filter(it=>(it.c!==undefined&&POSTS[it.c].k==="news")||(it.w&&it.w.film&&hasImg(it.w.film))).slice(0,14);
 function liveBanner(){const f=F[LIVE.f],n=daysTo(LIVE.d);return `<button class="live-b" data-live="1"><span class="countdown">${n>0?n:"0"}<small>${n===1?"day":"days"}</small></span><span><b>${esc(f.t)} live thread</b><span class="s">Opens 15 Oct with the first shows</span></span><span class="go">Peek ›</span></button>`}
+function heroHTML(){const w=topStory();if(!w||FILM_FILTER)return"";const k="w"+w.id;
+  return `<div class="hero-s" data-web="${k}" role="link" tabindex="0"><span class="kick"><i></i>Top story</span>${media(w.film,`data-web="${k}"`)}<h2>${esc(w.hook||w.title)}</h2><p>${esc(w.sum)}</p>
+   <span class="meta2">${fav(w.srcUrl)}${esc(w.source)} · ${ago(w.ts)}${(w.also||[]).length?" · "+alsoHTML(w):""}</span></div>`}
+function trendHTML(){const t=trending();if(!t.length)return"";
+  return `<div class="trend"><span class="lab">Trending</span>${FILM_FILTER?`<button data-ff="">All</button>`:""}${t.map(([id,n])=>`<button data-ff="${id}" aria-pressed="${FILM_FILTER===id}"><span class="tp pic">${img(id)}</span>${esc(F[id].t)} <small>${n}</small></button>`).join("")}</div>`}
+function briefHTML(){const b=briefs();if(!b.length)return"";
+  return `<div class="brief-h">Just in · summaries on the way</div>${b.map(w=>`<button class="brief" data-web="w${w.id}"><b>${esc(w.title)}</b>${tag(w.tag)}<small>${fav(w.srcUrl)}${esc(w.source)} · ${ago(w.ts)}</small></button>`).join("")}`}
 function feed(){
-  const st=swipeList(),items=feedItems();
-  return `<div class="stories"><button class="story first" data-swipe="${st[0]?.key||""}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span class="l">Catch up</span></button>
+  const st=swipeList(),hero=topStory(),items=feedItems().filter(it=>!hero||FILM_FILTER||it.key!=="w"+hero.id);
+  return trendHTML()+heroHTML()+(FILM_FILTER?"":`<div class="stories"><button class="story first" data-swipe="${st[0]?.key||""}"><span class="ring"><span class="pic">60 sec<br>news</span></span><span class="l">Catch up</span></button>
    ${st.map(it=>{const fid=it.w?it.w.film:POSTS[it.c].f;return `<button class="story" data-swipe="${it.key}"><span class="ring ${SEEN.has(it.key)?"seen":""}"><span class="pic">${img(fid)}</span></span><span class="l">${esc(F[fid].t)}</span></button>`}).join("")}</div>`
-   +liveBanner()+`<div class="newpill" id="newpill"></div>`
-   +items.map(postHTML).join("")
+   +liveBanner())+`<div class="newpill" id="newpill"></div>`
+   +items.slice(0,6).map(postHTML).join("")+briefHTML()+items.slice(6).map(postHTML).join("")
    +`<div class="end">${I.popcorn}<b>You're all caught up</b>New stories arrive every 15 minutes.</div>`+attribution();
 }
-const attribution=()=>`<p class="attr">Film images from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Headlines link to their publishers. Box office figures are tracker estimates.</p>`;
+const attribution=()=>`<nav class="attr" aria-label="Film pages" style="padding-bottom:4px"><a href="/tamil-movie-release-dates.html">Tamil release dates</a> · ${Object.keys(F).filter(id=>F[id].cal||F[id].rev).map(id=>`<a href="/film/${id}.html">${esc(F[id].t)}</a>`).join(" · ")} · <a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a></nav><p class="attr">Film images from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Headlines link to their publishers. Box office figures are tracker estimates.</p>`;
 
 /* ===== reviews ===== */
 const REVIEWED=Object.keys(F).filter(id=>F[id].rev).sort((a,b)=>crit(F[b]).score-crit(F[a]).score);
@@ -526,7 +624,7 @@ let rumFilter="all",MYTIPS=0;
 function rumours(){
   const opts=[["all","All"],["open","Still open"],["happened","Came true"],["busted","Busted"]];
   const list=RUMS.filter(r=>rumFilter==="all"||(rumFilter==="open"?["rumour","buzz"].includes(r.st):r.st===rumFilter));
-  const webR=(LIVE_DATA.items||[]).filter(i=>i.tag==="rumour").slice(0,8);
+  const webR=webItems().filter(i=>i.tag==="rumour").slice(0,8);
   const tally={};RUMS.forEach(r=>{const t=tally[r.out]=tally[r.out]||{y:0,b:0,o:0};r.st==="happened"?t.y++:r.st==="busted"?t.b++:t.o++});
   return `<div class="tipcard"><b>Heard something?</b><p>Send a tip. Once it's checked, it goes up as a rumour with your name on it. Get it right and you climb the tipster board.${MYTIPS?` You have ${MYTIPS} tip${MYTIPS>1?"s":""} waiting.`:""}</p><button class="btn" data-tip="1">Send a tip</button></div>
    <div class="filters">${opts.map(([key,l])=>`<button data-rf="${key}" aria-pressed="${key===rumFilter}">${l}</button>`).join("")}</div>`+
@@ -534,7 +632,7 @@ function rumours(){
     return `<button class="card rum" data-rum="${i}"><div class="meta">${tag(r.st)}<span>${esc(F[r.f].t)} · ${esc(r.date)}</span></div>
      <h2>${esc(r.t)}</h2><div class="steps ${cls}">${[1,2,3].map(x=>`<i class="${n&&x<=n?"on":""}"></i>`).join("")}</div>
      <div class="who">Reported by <b>${esc(r.src)}</b></div></button>`}).join("")||`<div class="empty">${I.popcorn}Nothing here right now.</div>`)+
-   (rumFilter==="all"||rumFilter==="open"?(webR.length?`<h3 class="sec-h">Fresh whispers</h3><p class="intro">Picked up automatically from headlines with words like "reportedly". Not checked yet.</p>`+webR.map(w=>`<button class="card rum" data-web="w${w.id}"><div class="meta">${tag("rumour")}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2></button>`).join(""):""):"")+
+   (rumFilter==="all"||rumFilter==="open"?(webR.length?`<h3 class="sec-h">Fresh whispers</h3><p class="intro">Picked up automatically from headlines with words like "reportedly". Not checked yet.</p>`+webR.map(w=>`<button class="card rum" data-web="w${w.id}"><div class="meta">${tag("rumour")}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.hook||w.title)}</h2></button>`).join(""):""):"")+
    `<h3 class="sec-h">Who gets it right?</h3><p class="intro">Counted from the rumours above. Every outlet gets a running accuracy score once we launch.</p><div class="card">`+
    Object.entries(tally).sort((a,b)=>(b[1].y+b[1].b+b[1].o)-(a[1].y+a[1].b+a[1].o)).map(([h,t])=>`<div class="src-row"><b>${esc(h)}</b><span class="p">${t.y+t.b+t.o}</span><small>${t.y} came true · ${t.b} busted · ${t.o} open</small></div>`).join("")+`</div>`;
 }
@@ -577,6 +675,7 @@ function openNews(i){const p=POSTS[i],f=F[p.f];
 function openWeb(key){const it=ITEM(key);if(!it.w)return;const w=it.w,f=w.film&&F[w.film];
   sheet(`${f&&hasImg(w.film)?`<span class="hero pic">${img(w.film,"backdrop")}</span>`:""}<div class="meta">${tag(w.tag)}<span>${esc(w.source)} · ${ago(w.ts)}</span></div><h2>${esc(w.title)}</h2>
    ${w.sum?`<p style="font-size:16px;color:var(--ink)">${esc(w.sum)}</p><p style="font-size:12.5px;color:var(--muted)">Summary written by Unmai from ${esc(w.source)}'s report.${w.tag==="rumour"?" This is a report, not an official announcement.":""}</p>`:`<p>${w.tag==="rumour"?"This reads like a report rather than an official announcement. ":""}Our summary of this story is on its way. Meanwhile you can read the original.</p>`}
+   ${(w.also||[]).length?`<h4>Also reported by</h4><div class="meta" style="flex-wrap:wrap;gap:6px 14px">${w.also.map(a=>`<a href="${esc(a.url)}" target="_blank" rel="noopener" style="display:inline-flex;gap:6px;align-items:center">${fav(a.srcUrl)}${esc(a.source)}</a>`).join("")}</div>`:""}
    <a class="btn out" href="${esc(w.realUrl||w.url)}" target="_blank" rel="noopener">Full story on ${esc(w.source)} ↗</a>
    ${f?`<button class="btn out" data-film="${w.film}">More on ${esc(f.t)}</button>`:""}
    <a class="btn wa" href="${wa(shareText(it))}" target="_blank" rel="noopener">Share on WhatsApp</a>`);}
@@ -590,8 +689,8 @@ function openRum(i){const r=RUMS[i];
 function openFilm(id){const f=F[id];if(!f)return;
   const people=`<div class="people">${f.dir?`<span>Directed by <b>${esc(f.dir)}</b></span>`:""}${f.cast?`<span>Starring <b>${esc(f.cast)}</b></span>`:""}</div>`;
   const hero=hasImg(id)?`<span class="hero pic">${img(id,"backdrop")}</span>`:"";
-  const news=(LIVE_DATA.items||[]).filter(w=>w.film===id).slice(0,5);
-  const newsHTML=news.length?`<h4>Latest headlines</h4>${news.map(w=>`<button class="rv" data-web="w${w.id}" style="text-align:left"><div class="w">${esc(w.source)}<small>${ago(w.ts)}</small>${tag(w.tag)}</div><p>${esc(w.title)}</p></button>`).join("")}`:"";
+  const news=webItems().filter(w=>w.film===id).slice(0,5);
+  const newsHTML=news.length?`<h4>Latest headlines</h4>${news.map(w=>`<button class="rv" data-web="w${w.id}" style="text-align:left"><div class="w">${esc(w.source)}<small>${ago(w.ts)}</small>${tag(w.tag)}</div><p>${esc(w.hook||w.title)}</p></button>`).join("")}`:"";
   if(f.rev){
     const c=crit(f),v=tier(c.score);
     const list=f.rev.map(([o,cr,rt,vd,t,u])=>`<div class="rv"><div class="w">${esc(o)}<small>${[cr,rt].filter(Boolean).map(esc).join(" · ")}</small><span class="tag t-${vd===1?"official":vd===0?"buzz":"busted"}">${vd===1?"Liked it":vd===0?"Mixed":"Didn't"}</span></div><p>${esc(t)}</p>${srcLink(u,"Read the review")}</div>`).join("");
@@ -686,21 +785,26 @@ function showPill(){const el=$("#newpill");if(!el||!PENDING.length)return;el.inn
   $("#newbtn").onclick=()=>{LIVE_DATA=PENDING_DATA;POSTERS=LIVE_DATA.posters||{};PENDING=[];updStamp();show("feed")}}
 let PENDING_DATA=null;
 function updStamp(){const u=$("#upd");if(LIVE_DATA.updated){u.hidden=false;u.innerHTML=`<i></i>Updated ${ago(LIVE_DATA.updated)}${/\d$/.test(ago(LIVE_DATA.updated))?"":""}`}}
-async function loadLive(first){
+async function loadLive(first,apply){
   try{
     const r=await fetch("data/live.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;
     const d=await r.json();
     if(first){LIVE_DATA=d;POSTERS=d.posters||{};updStamp();show(tab,true);return}
     const have=new Set((LIVE_DATA.items||[]).map(i=>i.id));
     const fresh=(d.items||[]).filter(i=>!have.has(i.id));
+    if(apply){LIVE_DATA=d;POSTERS=d.posters||{};PENDING=[];updStamp();if(tab==="feed")show("feed",true);return fresh.length}
     if(fresh.length){PENDING=fresh;PENDING_DATA=d;if(tab==="feed")showPill()}
-    else{LIVE_DATA.updated=d.updated;POSTERS=d.posters||POSTERS;updStamp()}
+    else{LIVE_DATA=d;POSTERS=d.posters||POSTERS;updStamp()}
+    return fresh.length
   }catch(e){/* no live data yet: curated content still shows */}
 }
 
 /* ===== events ===== */
 document.addEventListener("click",e=>{const t=e.target;
-  const tb=t.closest("[data-tab]");if(tb){close();show(tb.dataset.tab);return}
+  const tb=t.closest("[data-tab]");if(tb){close();if(tb.dataset.tab==="feed"&&tab==="feed"&&scrollY<40){refresh();return}FILM_FILTER="";show(tb.dataset.tab);return}
+  const ff=t.closest("[data-ff]");if(ff){FILM_FILTER=FILM_FILTER===ff.dataset.ff?"":ff.dataset.ff;show("feed");return}
+  const th=t.closest("[data-theme-set]");if(th){SET.theme=th.dataset.themeSet;saveSet();applySet();openSettings();return}
+  const sz=t.closest("[data-size-set]");if(sz){SET.size=sz.dataset.sizeSet;saveSet();applySet();openSettings();return}
   const lv=t.closest("[data-live]");if(lv){close();openLive();return}
   const tp=t.closest("[data-tip]");if(tp){openTip();return}
   const lk=t.closest("[data-like]");if(lk){const k=lk.dataset.like;LIKED.has(k)?LIKED.delete(k):LIKED.add(k);persist();lk.classList.toggle("liked",LIKED.has(k));lk.querySelector("span").textContent=LIKED.has(k)?1:"";return}
@@ -719,6 +823,30 @@ document.addEventListener("click",e=>{const t=e.target;
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
 $("#savedBtn").onclick=openSaved;
+$("#setBtn").onclick=openSettings;
+
+/* ===== settings ===== */
+let SET={theme:"system",size:"normal"};try{SET={...SET,...JSON.parse(localStorage.getItem("unmai-set")||"{}")}}catch(e){}
+const saveSet=()=>{try{localStorage.setItem("unmai-set",JSON.stringify(SET))}catch(e){}};
+const MQ=matchMedia("(prefers-color-scheme: dark)");
+function applySet(){const d=SET.theme==="dark"||(SET.theme==="system"&&MQ.matches);document.documentElement.dataset.theme=d?"dark":"light";
+  if(SET.size==="big")document.documentElement.dataset.size="big";else delete document.documentElement.dataset.size;
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.content=d?"#0E1116":"#FFFFFF")}
+MQ.addEventListener?.("change",applySet);applySet();
+function openSettings(){const seg=(attr,cur,opts)=>`<div class="seg">${opts.map(([v,l])=>`<button ${attr}="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+  sheet(`<h2>Settings</h2><div class="set"><h4>Appearance</h4>${seg("data-theme-set",SET.theme,[["system","Auto"],["light","Light"],["dark","Dark"]])}
+   <h4>Text size</h4>${seg("data-size-set",SET.size,[["normal","Standard"],["big","Larger"]])}
+   <h4>About</h4><a class="setrow" href="about.html">About Unmai <small>›</small></a><a class="setrow" href="privacy.html">Privacy <small>›</small></a>
+   <span class="setrow">News updates <small>every 15 minutes</small></span></div>`)}
+
+/* ===== pull to refresh ===== */
+async function refresh(){const p=$("#ptr");p.classList.add("go");p.style.transition="height .2s";p.style.height="52px";
+  const n=await loadLive(false,true);setTimeout(()=>{p.style.height="0";p.classList.remove("go")},350);toast(n?`${n} new post${n>1?"s":""}`:"You're up to date")}
+(function(){let y0=null,d=0;const p=$("#ptr"),sp=p.querySelector(".spin");
+  addEventListener("touchstart",e=>{if(scrollY<=0&&tab==="feed"&&!$("#layer").innerHTML)y0=e.touches[0].clientY;else y0=null},{passive:true});
+  addEventListener("touchmove",e=>{if(y0===null)return;d=Math.max(0,e.touches[0].clientY-y0);if(scrollY>0){y0=null;d=0}p.style.transition="none";p.style.height=Math.min(70,d*.45)+"px";sp.style.transform=`rotate(${d*2}deg)`},{passive:true});
+  addEventListener("touchend",()=>{if(y0===null)return;y0=null;if(d*.45>=52)refresh();else{p.style.transition="height .2s";p.style.height="0"}d=0});
+})();
 updSaved();
 show("feed");
 loadLive(true);

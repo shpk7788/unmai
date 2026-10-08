@@ -80,11 +80,13 @@ export function tagOf(title) {
   return "news";
 }
 
+// Low-value formats we never show: song uploads, weekly OTT listicles, generic lists.
+const JUNK = /(ott releases this week|\|\s*(song|lyric|video)|\b(lyric(al)? video|video song|full song|jukebox|horoscope)\b|\bott releases? (this|of the) week\b|\bnew ott releases\b|\b(top|best) \d+ |\bwatch online free\b|\bdownload\b)/i;
 const OTHER = /\b(malayalam|telugu|kannada|hindi|bollywood|tollywood|mollywood|sandalwood|bengali|marathi|punjabi|hollywood|korean|anime|doraemon)\b/i;
 
 export function relevant(it) {
   const t = it.title, film = it.film || matchFilm(t);
-  if (BLOCK.test(t)) return false;
+  if (BLOCK.test(t) || JUNK.test(t)) return false;
   if (film) return true;
   if (!TAMIL.test(t)) return false;
   if (OTHER.test(t) && !/tamil|kollywood/i.test(t)) return false;
@@ -120,7 +122,7 @@ async function fetchNews() {
    and ask a small AI model for a short
    summary in our own words (free Gemini API). Only the summary and the link are stored, never the article text. */
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-const SUM_PER_RUN = 6;
+const SUM_PER_RUN = 10;
 
 export async function decodeGoogleNews(url) {
   const m = url.match(/news\.google\.com\/(?:rss\/)?articles\/([^?]+)/);
@@ -144,12 +146,12 @@ export function articleText(html) {
   return decode(og) + "\n" + paras.join("\n").slice(0, 6000);
 }
 
-const SYSTEM = `You write short news summaries for Unmai, a Tamil cinema news website.
-Write 2 to 4 plain sentences, at most 70 words, in your own words, using only facts in the article text.
-Never copy sentences from the article. Never add facts that are not in the text.
-If something is unconfirmed (sources, reportedly, buzz, likely), say it is reported, not confirmed.
-No hype, no emoji, and don't repeat the headline word for word.
-If the text is empty, is not about the headline, or is not about Tamil cinema, reply with exactly: SKIP`;
+const SYSTEM = `You write posts for Unmai, a Tamil cinema news app read by fans on their phones.
+From the article text, return JSON with three fields:
+"hook": a short, punchy headline in your own words (max 12 words) that makes a fan want to read on. It must be accurate: no exaggeration, no question bait, no claims that aren't in the text, no ALL CAPS, no emoji.
+"summary": 2 to 3 plain sentences (max 60 words) in your own words with the key facts: who, what, when, numbers. Never copy sentences from the article. If something is unconfirmed (sources, reportedly, buzz), say it is reported, not confirmed.
+"score": a whole number 1 to 10 for how interesting this is to Tamil cinema fans. 8 to 10: big-star films, release dates, trailers, box office milestones, casting news, confirmed or busted rumours. 4 to 7: smaller films, interviews with news in them, OTT dates. 1 to 3: song uploads, listicles, gossip about private lives, anything not about Tamil cinema.
+Use only facts in the article text. If the text is empty or unrelated to the headline, return {"hook":"","summary":"","score":0}.`;
 
 let modelBlocked = false;
 const DIAG = { attempts: 0, ok: 0, noUrl: 0, fetchErr: 0, short: 0, skip: 0, ai: [], models: [] };
@@ -163,11 +165,11 @@ async function geminiModels() {
     const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": GEMINI_KEY } });
     const j = await r.json();
     const names = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
-    const rank = n => /flash-latest$/.test(n) ? 0 : /flash-lite-latest$/.test(n) ? 1 : /flash-lite/.test(n) ? 3 : /flash/.test(n) ? 2 : 9;
+    const rank = n => /flash-lite-latest$/.test(n) ? 0 : /flash-latest$/.test(n) ? 1 : /flash-lite/.test(n) ? 2 : /flash/.test(n) ? 3 : 9;
     GEMINI_MODELS = names.filter(n => rank(n) < 9 && !/image|tts|audio|live|embedding|preview|omni/.test(n)).sort((x, y) => rank(x) - rank(y) || y.localeCompare(x)).slice(0, 5);
     DIAG.models = GEMINI_MODELS;
   } catch (e) { DIAG.ai.push("model list failed: " + e.message); }
-  if (!GEMINI_MODELS || !GEMINI_MODELS.length) GEMINI_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
+  if (!GEMINI_MODELS || !GEMINI_MODELS.length) GEMINI_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest"];
   return GEMINI_MODELS;
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -181,7 +183,7 @@ async function summarise(title, source, text) {
     const body = {
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: "user", parts: [{ text: `Headline: ${title}\nPublisher: ${source}\n\nArticle text:\n${text}` }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 2048, responseMimeType: "application/json" },
     };
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
@@ -193,8 +195,10 @@ async function summarise(title, source, text) {
         if (!r.ok) { DIAG.ai.push(`${r.status} ${model}: ${(await r.text()).slice(0, 120)}`); break; }
         const j = await r.json();
         const out = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("").trim();
-        if (!out || /^SKIP/i.test(out)) return "SKIP";
-        return out.replace(/\s+/g, " ").slice(0, 600);
+        let o; try { o = JSON.parse(out.replace(/^```(json)?|```$/g, "")); } catch { DIAG.ai.push(`bad json ${model}`); return "SKIP"; }
+        if (!o || !o.summary || !(+o.score > 0)) return "SKIP";
+        const tidy = x => String(x || "").replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim();
+        return { hook: tidy(o.hook).slice(0, 120), sum: tidy(o.summary).slice(0, 500), score: Math.max(1, Math.min(10, Math.round(+o.score))) };
       } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); break; }
     }
   }
@@ -204,8 +208,8 @@ async function summarise(title, source, text) {
 async function addSummaries(items, tried) {
   let done = 0;
   for (const it of items) {
-    if (done >= SUM_PER_RUN || modelBlocked || DIAG.attempts >= 10) break;
-    if (it.sum || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
+    if (done >= SUM_PER_RUN || modelBlocked || DIAG.attempts >= 14) break;
+    if (it.hook || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
     DIAG.attempts++;
     try {
       const real = it.realUrl || (await decodeGoogleNews(it.url));
@@ -215,9 +219,9 @@ async function addSummaries(items, tried) {
       if (!res.ok) { DIAG.fetchErr++; tried[it.id] = NOW; continue; }
       const text = articleText(await res.text());
       if (text.length < 200) { DIAG.short++; tried[it.id] = NOW; continue; }
-      const sum = await summarise(it.title, it.source, text);
-      if (sum === "SKIP") { DIAG.skip++; tried[it.id] = NOW; }
-      else if (sum) { it.sum = sum; done++; DIAG.ok++; }
+      const res2 = await summarise(it.title, it.source, text);
+      if (res2 === "SKIP") { DIAG.skip++; it.score = 0; tried[it.id] = NOW; }
+      else if (res2) { Object.assign(it, res2); done++; DIAG.ok++; }
       // sum === null means the AI call failed: don't mark as tried, retry next run
     } catch (e) { DIAG.fetchErr++; tried[it.id] = NOW; console.warn("summary failed:", it.title.slice(0, 50), e.message); }
   }
@@ -260,18 +264,29 @@ async function main() {
   const raw = await fetchNews();
   const fresh = raw.filter(it => NOW - it.ts < KEEP_DAYS * 864e5 && it.ts <= NOW + 36e5 && relevant(it));
 
-  // Merge with what we already had, newest first, dropping near-duplicate headlines.
-  const pool = [...fresh, ...(prev.items || [])].sort((a, b) => b.ts - a.ts);
+  // Merge with what we already had. Work we've already done (summary, hook, score, real link,
+  // other outlets) is carried over by id or url, so it survives every run.
+  const idOf = it => it.id || Buffer.from(norm(it.title)).toString("base64url").slice(0, 16);
+  const prevById = new Map(), prevByUrl = new Map();
+  for (const p of prev.items || []) { prevById.set(p.id, p); prevByUrl.set(p.url, p); }
+  const pool = [...(prev.items || []), ...fresh].sort((a, b) => b.ts - a.ts);
   const kept = [];
-  for (const it of pool) {
-    if (NOW - it.ts > KEEP_DAYS * 864e5 || !relevant(it)) continue;
-    if (kept.some(k => k.url === it.url || similar(k.title, it.title) > 0.7)) continue;
-    const film = it.film || matchFilm(it.title);
+  for (const raw of pool) {
+    if (NOW - raw.ts > KEEP_DAYS * 864e5 || !relevant(raw)) continue;
+    const id = idOf(raw), old = prevById.get(id) || prevByUrl.get(raw.url) || {};
+    const it = { ...old, ...raw, id: old.id || id };
+    // Same story from another outlet: fold it into the existing post instead of repeating it.
+    const twin = kept.find(k => k.url === it.url || similar(k.title, it.title) > 0.6);
+    if (twin) {
+      if (twin.url !== it.url && twin.source !== it.source && !(twin.also || []).some(a => a.source === it.source)) (twin.also = twin.also || []).push({ source: it.source, url: it.url });
+      continue;
+    }
     kept.push({
-      id: it.id || Buffer.from(norm(it.title)).toString("base64url").slice(0, 16),
-      title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
-      tag: it.tag || tagOf(it.title), film,
+      id: it.id, title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,
+      tag: it.tag || tagOf(it.title), film: it.film || matchFilm(it.title),
       ...(it.realUrl ? { realUrl: it.realUrl } : {}), ...(it.sum ? { sum: it.sum } : {}),
+      ...(it.hook ? { hook: it.hook } : {}), ...(it.score !== undefined ? { score: it.score } : {}),
+      ...(it.also && it.also.length ? { also: it.also.slice(0, 8) } : {}),
     });
     if (kept.length >= MAX_ITEMS) break;
   }
@@ -280,7 +295,7 @@ async function main() {
   const sumTried = prev.sumTried2 || {};
   await addSummaries(kept, sumTried);
   for (const k of Object.keys(sumTried)) if (NOW - sumTried[k] > 3 * 864e5) delete sumTried[k];
-  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || ""]));
+  const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || "", i.hook || "", (i.also || []).length]));
   const sameItems = sig(prev.items) === sig(kept);
   const samePosters = JSON.stringify(prev.posters || {}) === JSON.stringify(posters);
   const sameDiag = JSON.stringify(prev.diag || {}) === JSON.stringify(DIAG);
