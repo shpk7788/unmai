@@ -153,6 +153,7 @@ No hype, no emoji, and don't repeat the headline word for word.
 If the text is empty, is not about the headline, or is not about Tamil cinema, reply with exactly: SKIP`;
 
 let modelBlocked = false;
+const DIAG = { attempts: 0, ok: 0, noUrl: 0, fetchErr: 0, short: 0, skip: 0, ai: [] };
 async function summarise(title, source, text) {
   if (!GH_TOKEN || modelBlocked) return null;
   const messages = [{ role: "system", content: SYSTEM }, { role: "user", content: `Headline: ${title}\nPublisher: ${source}\n\nArticle text:\n${text}` }];
@@ -163,34 +164,38 @@ async function summarise(title, source, text) {
   for (const [url, model] of tries) {
     try {
       const r = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${GH_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ model, messages, max_tokens: 220, temperature: 0.3 }) });
-      if (r.status === 429) { modelBlocked = true; console.warn("AI rate limit reached for now"); return null; }
-      if (!r.ok) { console.warn("AI call failed", r.status, url); continue; }
+      if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); console.warn("AI rate limit reached for now"); return null; }
+      if (!r.ok) { const t = (await r.text()).slice(0, 160); DIAG.ai.push(`${r.status} ${model}: ${t}`); console.warn("AI call failed", r.status, url, t); continue; }
       const out = (await r.json()).choices?.[0]?.message?.content?.trim();
       if (!out || /^SKIP/i.test(out)) return "SKIP";
       return out.replace(/\s+/g, " ").slice(0, 600);
-    } catch (e) { console.warn("AI error", e.message); }
+    } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); console.warn("AI error", e.message); }
   }
+  modelBlocked = true; // both endpoints failed: stop trying this run
   return null;
 }
 
 async function addSummaries(items, tried) {
   let done = 0;
   for (const it of items) {
-    if (done >= SUM_PER_RUN || modelBlocked) break;
+    if (done >= SUM_PER_RUN || modelBlocked || DIAG.attempts >= 10) break;
     if (it.sum || (tried[it.id] && NOW - tried[it.id] < 12 * 3600e3)) continue;
-    tried[it.id] = NOW;
+    DIAG.attempts++;
     try {
       const real = it.realUrl || (await decodeGoogleNews(it.url));
-      if (!real) continue;
+      if (!real) { DIAG.noUrl++; tried[it.id] = NOW; continue; }
       it.realUrl = real;
-      const html = await (await fetch(real, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" } })).text();
-      const text = articleText(html);
-      if (text.length < 200) continue;
+      const res = await fetch(real, { headers: { "User-Agent": UA, "Accept-Language": "en-IN,en" }, redirect: "follow" });
+      if (!res.ok) { DIAG.fetchErr++; tried[it.id] = NOW; continue; }
+      const text = articleText(await res.text());
+      if (text.length < 200) { DIAG.short++; tried[it.id] = NOW; continue; }
       const sum = await summarise(it.title, it.source, text);
-      if (sum && sum !== "SKIP") { it.sum = sum; done++; }
-    } catch (e) { console.warn("summary failed:", it.title.slice(0, 50), e.message); }
+      if (sum === "SKIP") { DIAG.skip++; tried[it.id] = NOW; }
+      else if (sum) { it.sum = sum; done++; DIAG.ok++; }
+      // sum === null means the AI call failed: don't mark as tried, retry next run
+    } catch (e) { DIAG.fetchErr++; tried[it.id] = NOW; console.warn("summary failed:", it.title.slice(0, 50), e.message); }
   }
-  console.log(`Added ${done} summaries.`);
+  console.log(`Added ${done} summaries.`, JSON.stringify(DIAG));
 }
 
 async function tmdb(path) {
@@ -246,15 +251,16 @@ async function main() {
   }
 
   const posters = await fetchPosters(prev);
-  const sumTried = prev.sumTried || {};
+  const sumTried = prev.sumTried2 || {};
   await addSummaries(kept, sumTried);
   for (const k of Object.keys(sumTried)) if (NOW - sumTried[k] > 3 * 864e5) delete sumTried[k];
   const sig = list => JSON.stringify((list || []).map(i => [i.id, i.sum || ""]));
   const sameItems = sig(prev.items) === sig(kept);
   const samePosters = JSON.stringify(prev.posters || {}) === JSON.stringify(posters);
-  if (sameItems && samePosters) { console.log("No changes."); return; }
+  const sameDiag = JSON.stringify(prev.diag || {}) === JSON.stringify(DIAG);
+  if (sameItems && samePosters && sameDiag) { console.log("No changes."); return; }
 
-  const out = { updated: NOW, items: kept, posters, postersTried: prev.postersTried || {}, sumTried };
+  const out = { updated: NOW, items: kept, posters, postersTried: prev.postersTried || {}, sumTried2: sumTried, diag: DIAG };
   writeFileSync(OUT, JSON.stringify(out));
   console.log(`Wrote ${kept.length} items (${fresh.length} fetched this run), ${Object.keys(posters).length} films with images.`);
 }
