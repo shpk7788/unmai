@@ -120,7 +120,7 @@ async function fetchNews() {
    and ask a small AI model for a short
    summary in our own words (free Gemini API). Only the summary and the link are stored, never the article text. */
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-const SUM_PER_RUN = 4;
+const SUM_PER_RUN = 6;
 
 export async function decodeGoogleNews(url) {
   const m = url.match(/news\.google\.com\/(?:rss\/)?articles\/([^?]+)/);
