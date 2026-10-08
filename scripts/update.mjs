@@ -28,7 +28,7 @@ const QUERIES = [
 // Political and off-topic noise. Some stars are also politicians, so we filter on these words.
 const BLOCK = /\b(chief minister|\bCM\b|TVK|DMK|AIADMK|BJP|election|assembly|minister|cabinet|rally|poll(s)? |vote|party worker|arrest|police|court case|cricket|IPL|stock|sensex|weather)\b/i;
 const CINEMA = /\b(film|movie|cinema|kollywood|trailer|teaser|song|single|box office|collection|release|OTT|Netflix|Prime Video|Hotstar|ZEE5|Sun NXT|Aha|shooting|director|actor|actress|star|cast|cameo|review|audio launch|first look|poster|censor|U\/A|sequel|remake|BO|crore)\b/i;
-const TAMIL = /\b(tamil|kollywood|chennai|rajinikanth|rajini|kamal|vijay sethupathi|ajith|suriya|karthi|dhanush|sivakarthikeyan|simbu|silambarasan|vikram|nayanthara|trisha|keerthy|anirudh|lokesh|nelson|vetrimaaran|mani ratnam|shankar|atlee|sun pictures|lyca|soori|vishal|jayam ravi|ravi mohan|arya|udhayanidhi)\b/i;
+const TAMIL = /\b(tamil|kollywood|chennai|rajinikanth|rajini|kamal|vijay sethupathi|ajith|suriya|karthi|dhanush|sivakarthikeyan|simbu|silambarasan|vikram|nayanthara|trisha|keerthy|anirudh|lokesh|nelson|vetrimaaran|mani ratnam|shankar|atlee|sun pictures|lyca|soori|vishal|jayam ravi|ravi mohan|arya|udhayanidhi|subbaraj|mari selvaraj|ashok selvan|mamitha|jason sanjay|sananth|arulnithi|atharvaa|vijay antony|prabhu ?deva|g\.? ?v\.? prakash|pa\.? ranjith|venkat prabhu|ilaiyaraaja|a\.? ?r\.? rahman|yuvan|santhosh narayanan|vadivelu|yogi babu|gautham (vasudev )?menon|selvaraghavan|sathyaraj|arvind swamy|kavin|harish kalyan|sundar c|hiphop tamizha|lyca|red giant|wunderbar|raaj kamal|sathya jyothi|ashwath|vetri maaran|indian 3|thalaivar|thalapathy|ulaganayagan)\b/i;
 
 const RUMOUR = /\b(reportedly|rumou?r|buzz|likely|speculat|said to be|in talks|could|may (star|join|play|release)|report(s)? suggest|sources say|insiders?|whispers?)\b/i;
 const BOX = /\b(box office|collection|crore|day \d+|weekend|opening day|gross|net)\b/i;
@@ -80,12 +80,21 @@ export function tagOf(title) {
   return "news";
 }
 
+const OTHER = /\b(malayalam|telugu|kannada|hindi|bollywood|tollywood|mollywood|sandalwood|bengali|marathi|punjabi|hollywood|korean|anime|doraemon)\b/i;
+
 export function relevant(it) {
-  const t = it.title;
+  const t = it.title, film = it.film || matchFilm(t);
   if (BLOCK.test(t)) return false;
-  if (!CINEMA.test(t) && !matchFilm(t)) return false;
-  if (!TAMIL.test(t) && !matchFilm(t) && !/tamil|kollywood/i.test(it.query || "")) return false;
-  return true;
+  if (film) return true;
+  if (!TAMIL.test(t)) return false;
+  if (OTHER.test(t) && !/tamil|kollywood/i.test(t)) return false;
+  return CINEMA.test(t);
+}
+
+// Items from a film-specific search belong to that film when the title names it.
+function filmFromQuery(q, title) {
+  for (const f of FILMS) if (q.includes(`"${f.aliases[0]}"`) && title.toLowerCase().includes(f.aliases[0].toLowerCase())) return f.id;
+  return null;
 }
 
 async function get(url, headers = {}) {
@@ -100,7 +109,7 @@ async function fetchNews() {
     const url = `https://news.google.com/rss/search?q=${encodeURIComponent(q + " when:3d")}&hl=en-IN&gl=IN&ceid=IN:en`;
     try {
       const xml = await (await get(url)).text();
-      for (const it of parseRss(xml)) all.push({ ...it, query: q });
+      for (const it of parseRss(xml)) all.push({ ...it, query: q, film: matchFilm(it.title) || filmFromQuery(q, it.title) });
     } catch (e) { console.warn("news fetch failed:", q, e.message); }
   }
   return all;
@@ -146,9 +155,9 @@ async function main() {
   const pool = [...fresh, ...(prev.items || [])].sort((a, b) => b.ts - a.ts);
   const kept = [];
   for (const it of pool) {
-    if (NOW - it.ts > KEEP_DAYS * 864e5) continue;
+    if (NOW - it.ts > KEEP_DAYS * 864e5 || !relevant(it)) continue;
     if (kept.some(k => k.url === it.url || similar(k.title, it.title) > 0.7)) continue;
-    const film = it.film !== undefined ? it.film : matchFilm(it.title);
+    const film = it.film || matchFilm(it.title);
     kept.push({
       id: it.id || Buffer.from(norm(it.title)).toString("base64url").slice(0, 16),
       title: it.title, source: it.source, srcUrl: it.srcUrl || "", url: it.url, ts: it.ts,

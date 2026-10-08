@@ -16,11 +16,7 @@
    "Dorothy"
   ],
   "year": 2026,
-  "search": true,
-  "needs": [
-   "Keerthy",
-   "Subbaraj"
-  ]
+  "search": true
  },
  {
   "id": "meesaya",
@@ -50,7 +46,11 @@
   "search": true,
   "needs": [
    "Jason Sanjay",
-   "Sundeep"
+   "Sundeep",
+   "Box Office",
+   "Song",
+   "OTT",
+   "Tamil"
   ]
  },
  {
