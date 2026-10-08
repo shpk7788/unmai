@@ -164,7 +164,7 @@ async function geminiModels() {
     const j = await r.json();
     const names = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
     const rank = n => /flash-latest$/.test(n) ? 0 : /flash-lite-latest$/.test(n) ? 1 : /flash-lite/.test(n) ? 3 : /flash/.test(n) ? 2 : 9;
-    GEMINI_MODELS = names.filter(n => rank(n) < 9 && !/image|tts|audio|live|embedding|preview-tts/.test(n)).sort((x, y) => rank(x) - rank(y) || y.localeCompare(x)).slice(0, 5);
+    GEMINI_MODELS = names.filter(n => rank(n) < 9 && !/image|tts|audio|live|embedding|preview|omni/.test(n)).sort((x, y) => rank(x) - rank(y) || y.localeCompare(x)).slice(0, 5);
     DIAG.models = GEMINI_MODELS;
   } catch (e) { DIAG.ai.push("model list failed: " + e.message); }
   if (!GEMINI_MODELS || !GEMINI_MODELS.length) GEMINI_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
@@ -189,7 +189,7 @@ async function summarise(title, source, text) {
           method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY }, body: JSON.stringify(body),
         });
         if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); return null; }
-        if (r.status === 503 || r.status === 500) { DIAG.ai.push(`${r.status} ${model}`); await sleep(2500); continue; }
+        if (r.status === 503 || r.status === 500) { DIAG.ai.push(`${r.status} ${model}`); await sleep(1500); break; } // busy: try the next model
         if (!r.ok) { DIAG.ai.push(`${r.status} ${model}: ${(await r.text()).slice(0, 120)}`); break; }
         const j = await r.json();
         const out = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("").trim();
