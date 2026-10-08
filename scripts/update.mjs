@@ -171,6 +171,7 @@ From the article text, return JSON with these fields:
 Use only facts in the article text. If the text is empty or unrelated to the headline, return {"hook":"","summary":"","score":0}.`;
 
 let modelBlocked = false;
+const BLOCKED = new Set(); // models that hit their free-tier limit this run
 const DIAG = { attempts: 0, ok: 0, noUrl: 0, fetchErr: 0, short: 0, skip: 0, ai: [], models: [] };
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 let GEMINI_MODELS = null;
@@ -195,7 +196,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function summarise(title, source, text) {
   if (!GEMINI_KEY) { DIAG.ai.push("no GEMINI_API_KEY secret yet"); modelBlocked = true; return null; }
   if (modelBlocked) return null;
-  const models = await geminiModels();
+  const models = (await geminiModels()).filter(m => !BLOCKED.has(m)).slice(0, 5);
+  if (!models.length) { modelBlocked = true; return null; }
   for (const model of models) {
     const body = {
       systemInstruction: { parts: [{ text: SYSTEM }] },
@@ -207,7 +209,7 @@ async function summarise(title, source, text) {
         const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY }, body: JSON.stringify(body),
         });
-        if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); return null; }
+        if (r.status === 429) { BLOCKED.add(model); DIAG.ai.push(`429 ${model}`); break; } // this model's quota is used up: try the next one
         if (r.status === 503 || r.status === 500) { DIAG.ai.push(`${r.status} ${model}`); await sleep(1500); break; } // busy: try the next model
         if (!r.ok) { DIAG.ai.push(`${r.status} ${model}: ${(await r.text()).slice(0, 120)}`); break; }
         const j = await r.json();
@@ -216,7 +218,7 @@ async function summarise(title, source, text) {
         if (!o || !o.summary || !(+o.score > 0)) return "SKIP";
         const tidyQ = q => q && q.text && q.by ? { text: String(q.text).replace(/^["“”']+|["“”']+$/g, "").replace(/\s+/g, " ").trim().slice(0, 200), by: String(q.by).trim().slice(0, 60) } : null;
         const tidy = x => String(x || "").replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim();
-        return { hook: tidy(o.hook).slice(0, 120), sum: tidy(o.summary).slice(0, 500), points: (Array.isArray(o.points) ? o.points : []).map(x => String(x).replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 3), quote: tidyQ(o.quote),
+        return { hook: tidy(o.hook).slice(0, 120), sum: (s => s.length <= 900 ? s : s.slice(0, 900).replace(/[^.!?]*$/, ""))(tidy(o.summary)), points: (Array.isArray(o.points) ? o.points : []).map(x => String(x).replace(/[*_]{1,2}([^*_]+)[*_]{1,2}/g, "$1").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 3), quote: tidyQ(o.quote),
           score: Math.max(1, Math.min(10, Math.round(+o.score))), ...(o.cat ? { cat: String(o.cat).toLowerCase().slice(0, 10) } : {}) };
       } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); break; }
     }
