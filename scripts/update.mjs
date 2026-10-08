@@ -152,36 +152,53 @@ No hype, no emoji, and don't repeat the headline word for word.
 If the text is empty, is not about the headline, or is not about Tamil cinema, reply with exactly: SKIP`;
 
 let modelBlocked = false;
-const DIAG = { attempts: 0, ok: 0, noUrl: 0, fetchErr: 0, short: 0, skip: 0, ai: [] };
+const DIAG = { attempts: 0, ok: 0, noUrl: 0, fetchErr: 0, short: 0, skip: 0, ai: [], models: [] };
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
-let geminiModel = 0;
+let GEMINI_MODELS = null;
+
+// Ask Google which Flash models this key can use, so retired model names never break us.
+async function geminiModels() {
+  if (GEMINI_MODELS) return GEMINI_MODELS;
+  try {
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": GEMINI_KEY } });
+    const j = await r.json();
+    const names = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
+    const rank = n => /flash-latest$/.test(n) ? 0 : /flash-lite-latest$/.test(n) ? 1 : /flash-lite/.test(n) ? 3 : /flash/.test(n) ? 2 : 9;
+    GEMINI_MODELS = names.filter(n => rank(n) < 9 && !/image|tts|audio|live|embedding|preview-tts/.test(n)).sort((x, y) => rank(x) - rank(y) || y.localeCompare(x)).slice(0, 5);
+    DIAG.models = GEMINI_MODELS;
+  } catch (e) { DIAG.ai.push("model list failed: " + e.message); }
+  if (!GEMINI_MODELS || !GEMINI_MODELS.length) GEMINI_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];
+  return GEMINI_MODELS;
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // Free Gemini API (Google AI Studio key saved as the GEMINI_API_KEY secret).
 async function summarise(title, source, text) {
   if (!GEMINI_KEY) { DIAG.ai.push("no GEMINI_API_KEY secret yet"); modelBlocked = true; return null; }
   if (modelBlocked) return null;
-  while (geminiModel < GEMINI_MODELS.length) {
-    const model = GEMINI_MODELS[geminiModel];
+  const models = await geminiModels();
+  for (const model of models) {
     const body = {
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: "user", parts: [{ text: `Headline: ${title}\nPublisher: ${source}\n\nArticle text:\n${text}` }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 400, ...(model.startsWith("gemini-2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {}) },
+      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
     };
-    try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY }, body: JSON.stringify(body),
-      });
-      if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); return null; }
-      if (!r.ok) { DIAG.ai.push(`${r.status} ${model}: ${(await r.text()).slice(0, 140)}`); geminiModel++; continue; }
-      const j = await r.json();
-      const out = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-      if (!out || /^SKIP/i.test(out)) return "SKIP";
-      return out.replace(/\s+/g, " ").slice(0, 600);
-    } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); geminiModel++; }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY }, body: JSON.stringify(body),
+        });
+        if (r.status === 429) { modelBlocked = true; DIAG.ai.push(`429 ${model}`); return null; }
+        if (r.status === 503 || r.status === 500) { DIAG.ai.push(`${r.status} ${model}`); await sleep(2500); continue; }
+        if (!r.ok) { DIAG.ai.push(`${r.status} ${model}: ${(await r.text()).slice(0, 120)}`); break; }
+        const j = await r.json();
+        const out = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("").trim();
+        if (!out || /^SKIP/i.test(out)) return "SKIP";
+        return out.replace(/\s+/g, " ").slice(0, 600);
+      } catch (e) { DIAG.ai.push(`err ${model}: ${e.message}`); break; }
+    }
   }
-  modelBlocked = true;
-  return null;
+  return null; // every model failed for this story: leave it for the next run
 }
 
 async function addSummaries(items, tried) {
