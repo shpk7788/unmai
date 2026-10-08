@@ -1,0 +1,307 @@
+[
+ {
+  "id": "baththa",
+  "title": "Baththa",
+  "aliases": [
+   "Baththa"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": []
+ },
+ {
+  "id": "dorothy",
+  "title": "Dorothy",
+  "aliases": [
+   "Dorothy"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Keerthy",
+   "Subbaraj"
+  ]
+ },
+ {
+  "id": "meesaya",
+  "title": "Meesaya Murukku 2",
+  "aliases": [
+   "Meesaya Murukku 2"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "sardar2",
+  "title": "Sardar 2",
+  "aliases": [
+   "Sardar 2"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "sigma",
+  "title": "Sigma",
+  "aliases": [
+   "Sigma"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Jason Sanjay",
+   "Sundeep"
+  ]
+ },
+ {
+  "id": "yezhu",
+  "title": "Yezhu Kadal Yezhu Malai",
+  "aliases": [
+   "Yezhu Kadal Yezhu Malai",
+   "Ezhu Kadal Ezhu Malai"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "nova",
+  "title": "Nova",
+  "aliases": [
+   "Nova"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Raiza"
+  ]
+ },
+ {
+  "id": "paris",
+  "title": "Paris Cafe",
+  "aliases": [
+   "Paris Cafe"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Cafe"
+  ]
+ },
+ {
+  "id": "jailer2",
+  "title": "Jailer 2",
+  "aliases": [
+   "Jailer 2",
+   "Jailer2"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "appakutty",
+  "title": "Appa Kutty",
+  "aliases": [
+   "Appa Kutty"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "irandu",
+  "title": "Irandu Vaanam",
+  "aliases": [
+   "Irandu Vaanam"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "delivery",
+  "title": "Delivery Boy",
+  "aliases": [
+   "Delivery Boy"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "kallapart",
+  "title": "Kallapart",
+  "aliases": [
+   "Kallapart"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Arvind Swamy"
+  ]
+ },
+ {
+  "id": "scene",
+  "title": "Scene",
+  "aliases": [
+   "Scene"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Suriya",
+   "Jithu"
+  ]
+ },
+ {
+  "id": "mookuthi",
+  "title": "Mookuthi Amman 2",
+  "aliases": [
+   "Mookuthi Amman 2"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "marshal",
+  "title": "Marshal",
+  "aliases": [
+   "Marshal"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Karthi"
+  ]
+ },
+ {
+  "id": "blackgold",
+  "title": "Black Gold",
+  "aliases": [
+   "Black Gold"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Vetri"
+  ]
+ },
+ {
+  "id": "om",
+  "title": "Om",
+  "aliases": [
+   "Om Chapter",
+   "Dhanush Om",
+   "Om movie"
+  ],
+  "year": 2026,
+  "search": true,
+  "needs": [
+   "Dhanush",
+   "Mammootty"
+  ]
+ },
+ {
+  "id": "sathyavan",
+  "title": "Sathyavan Savithiri",
+  "aliases": [
+   "Sathyavan Savithiri"
+  ],
+  "year": 2026,
+  "search": true
+ },
+ {
+  "id": "dharman",
+  "title": "Dharman",
+  "aliases": [
+   "Dharman"
+  ],
+  "year": 2027,
+  "search": true,
+  "needs": [
+   "Rajinikanth",
+   "Rajini",
+   "Ashwath"
+  ]
+ },
+ {
+  "id": "seyon",
+  "title": "Seyon",
+  "aliases": [
+   "Seyon"
+  ],
+  "year": null,
+  "search": true,
+  "needs": [
+   "Sivakarthikeyan"
+  ]
+ },
+ {
+  "id": "arasan",
+  "title": "Arasan",
+  "aliases": [
+   "Arasan"
+  ],
+  "year": null,
+  "search": true,
+  "needs": [
+   "Silambarasan",
+   "Simbu",
+   "STR",
+   "Vetrimaaran"
+  ]
+ },
+ {
+  "id": "dhruva",
+  "title": "Dhruva Natchathiram",
+  "aliases": [
+   "Dhruva Natchathiram"
+  ],
+  "year": null,
+  "search": true
+ },
+ {
+  "id": "mandaadi",
+  "title": "Mandaadi",
+  "aliases": [
+   "Mandaadi"
+  ],
+  "year": null,
+  "search": true
+ },
+ {
+  "id": "mrbhaarath",
+  "title": "Mr. Bhaarath",
+  "aliases": [
+   "Mr. Bhaarath",
+   "Mr Bhaarath"
+  ],
+  "year": null,
+  "search": true
+ },
+ {
+  "id": "daredevil",
+  "title": "Dare Devil",
+  "aliases": [
+   "Dare Devil",
+   "Daredevil"
+  ],
+  "year": null,
+  "search": false
+ },
+ {
+  "id": "sk27",
+  "title": "SK27",
+  "aliases": [
+   "SK27",
+   "SK 27"
+  ],
+  "year": null,
+  "search": false
+ },
+ {
+  "id": "maari3",
+  "title": "Maari 3",
+  "aliases": [
+   "Maari 3"
+  ],
+  "year": null,
+  "search": false
+ }
+]
