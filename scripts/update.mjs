@@ -163,9 +163,17 @@ export function articleEmbeds(html) {
 }
 const stripTags = h => decode(String(h).replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
 const keyWords = t => new Set(String(t).toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(w => w.length > 3));
+// A video counts only if it is about this story: not the publisher's own promo, and sharing at least
+// two meaningful words (film, star, song name) with the story.
+const GENERIC = new Set("tamil official video trailer teaser song lyric lyrical full movie film cinema news latest with from this that their what when star starrer".split(" "));
+export function videoFits(it, v) {
+  const pub = String(it.source || "").toLowerCase();
+  if (pub && (String(v.ch).toLowerCase().includes(pub.split(" ").slice(-2).join(" ")) || String(v.title).toLowerCase().includes(pub))) return false;
+  const ctx = keyWords(`${String(it.title).replace(/\s+-\s+[^-]+$/, "")} ${it.hook || ""} ${(FILMS.find(f => f.id === it.film) || {}).title || ""}`);
+  return [...keyWords(v.title)].filter(w => ctx.has(w) && !GENERIC.has(w)).length >= 2;
+}
 async function enrichMedia(it, page) {
   const { yt, tw } = articleEmbeds(page);
-  const ctx = keyWords(`${it.title} ${it.hook || ""} ${(FILMS.find(f => f.id === it.film) || {}).title || ""}`);
   const vids = [];
   for (const id of yt) {
     if (vids.length >= 1) break;
@@ -173,8 +181,8 @@ async function enrichMedia(it, page) {
       const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent("https://www.youtube.com/watch?v=" + id)}&format=json`);
       if (!r.ok) continue;
       const j = await r.json();
-      const shared = [...keyWords(j.title)].filter(w => ctx.has(w)).length;
-      if (shared >= 1 || /trailer|teaser|glimpse|song|lyric|promo|first look|single/i.test(j.title) && shared >= 1) vids.push({ id, title: stripTags(j.title).slice(0, 140), ch: String(j.author_name || "").slice(0, 60) });
+      const v = { id, title: stripTags(j.title).slice(0, 140), ch: String(j.author_name || "").slice(0, 60) };
+      if (videoFits(it, v)) vids.push(v);
     } catch {}
   }
   const posts = [];
@@ -290,6 +298,7 @@ async function addSummaries(items, tried) {
       // sum === null means the AI call failed: don't mark as tried, retry next run
     } catch (e) { DIAG.fetchErr++; tried[it.id] = NOW; console.warn("summary failed:", it.title.slice(0, 50), e.message); }
   }
+  for (const it of items) if (it.videos) it.videos = it.videos.filter(v => videoFits(it, v));
   let ph = 0;
   for (const it of items) {
     if (ph >= 30 || (it.photo !== undefined && it.videos) || !it.v || !it.realUrl) continue; // stories written before photos/videos existed
