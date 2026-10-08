@@ -6,7 +6,16 @@
 import fs from "node:fs";
 import vm from "node:vm";
 
-const SITE = "https://unmai.snyp.io";
+// The domain comes from the CNAME file, so changing domains means editing CNAME only.
+const SITE = "https://" + (fs.existsSync("CNAME") ? fs.readFileSync("CNAME", "utf8").trim() : "unmai.snyp.io");
+// Point canonical links and share tags in the hand-written pages at the current domain:
+// whatever host index.html's canonical link names is swapped for the one in CNAME.
+{
+  const oldHost = (fs.readFileSync("index.html", "utf8").match(/rel="canonical" href="https:\/\/([^/"]+)/) || [])[1];
+  const newHost = SITE.slice(8);
+  if (oldHost && oldHost !== newHost) for (const f of ["index.html", "about.html", "privacy.html"])
+    if (fs.existsSync(f)) fs.writeFileSync(f, fs.readFileSync(f, "utf8").split("https://" + oldHost).join("https://" + newHost));
+}
 const html = fs.readFileSync("index.html", "utf8");
 const live = JSON.parse(fs.readFileSync("data/live.json", "utf8"));
 
